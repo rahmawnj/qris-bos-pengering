@@ -157,6 +157,8 @@ class QrisBillingController extends Controller
             abort(404, 'Data outlet tidak ditemukan.');
         }
 
+        $period = $request->input('period', $payment->period_end?->format('Y-m') ?? $payment->period_start?->format('Y-m') ?? now()->format('Y-m'));
+
         $outlet = $this->outletFromBillingPayment($payment);
         $outlet->load(['owner.user', 'owner.withdrawals', 'devices']);
 
