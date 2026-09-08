@@ -203,7 +203,8 @@ class QrisBillingController extends Controller
             $outlet->update(['qris_billing_due_date' => $activeUntil->toDateString()]);
         });
 
-        return back()->with('success', 'Perpanjangan QRIS berhasil dikonfirmasi sampai ' . $activeUntil->format('d/m/Y') . '.');
+        return redirect()->route('admin.qris-billing.report')
+            ->with('success', 'Perpanjangan QRIS berhasil dikonfirmasi sampai ' . $activeUntil->format('d/m/Y') . '.');
     }
 
     private function baseOutletQuery()
