@@ -1,0 +1,16 @@
+[12-May-2026 20:24:31 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Http\Kernel" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php on line 7
+[13-May-2026 00:27:22 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Http\Kernel" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php on line 7
+[13-May-2026 00:32:46 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Http\Kernel" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php on line 7
+[13-May-2026 10:48:41 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Http\Kernel" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php:7
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Kernel.php on line 7

@@ -1,0 +1,177 @@
+@props([
+    'items' => ['Partner', 'QRIS', 'Detail Perpanjangan'],
+    'title' => 'Perpanjangan QRIS',
+    'subtitle' => 'Upload bukti pembayaran untuk mengaktifkan kembali QRIS outlet Anda.',
+])
+
+@extends('layouts.dashboard.app')
+
+@section('content')
+    <x-breadcrumb :items="$items" :title="$title" :subtitle="$subtitle" />
+
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
+    @if (session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card border-0 shadow-sm rounded-4 mb-4">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center gap-3 mb-4">
+                        <div class="bg-primary-transparent-1 text-primary p-3 rounded-circle">
+                            <i class="fa fa-store fa-2x"></i>
+                        </div>
+                        <div>
+                            <h4 class="mb-0">{{ $outlet->outlet_name }}</h4>
+                            <span class="text-muted small">ID: {{ $outlet->code }}</span>
+                        </div>
+                    </div>
+
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <div class="row text-center">
+                            <div class="col-6 border-end">
+                                <div class="text-muted small mb-1">Periode</div>
+                                <div class="fw-bold text-dark">{{ $outlet->billing_period }}</div>
+                                @if (($outlet->billing_month_count ?? 0) > 1)
+                                    <div class="text-muted small">{{ $outlet->billing_month_count }} bulan digabung</div>
+                                @endif
+                            </div>
+                            <div class="col-6">
+                                <div class="text-muted small mb-1">Status</div>
+                                @php
+                                    $statusClass = [
+                                        'paid' => 'success',
+                                        'pending' => 'warning text-dark',
+                                        'due' => 'danger',
+                                        'not_due' => 'info',
+                                    ][$outlet->billing_status] ?? 'secondary';
+                                    $statusLabel = [
+                                        'paid' => 'Aktif',
+                                        'pending' => 'Menunggu Verifikasi',
+                                        'due' => 'Perlu Perpanjangan',
+                                        'not_due' => 'Aktif',
+                                    ][$outlet->billing_status] ?? ucfirst($outlet->billing_status);
+                                @endphp
+                                <span class="badge bg-{{ $statusClass }}">{{ $statusLabel }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="text-muted small mb-1">Total yang harus dibayar</div>
+                        <div class="display-6 fw-bold text-primary">Rp {{ number_format($outlet->billing_amount, 0, ',', '.') }}</div>
+                        @if ($outlet->billing_status === 'paid' || $outlet->billing_status === 'not_due')
+                            <div class="text-muted small mt-1">Aktif sampai: <span class="fw-bold">{{ $outlet->billing_due_date ? $outlet->billing_due_date->format('d/m/Y') : '-' }}</span></div>
+                        @endif
+                    </div>
+
+                    @if (!empty($outlet->billing_unpaid_periods))
+                        <div class="mb-4">
+                            <div class="text-muted small fw-bold text-uppercase mb-2">Rincian Bulan</div>
+                            <div class="border rounded overflow-hidden">
+                                @foreach ($outlet->billing_unpaid_periods as $item)
+                                    <div class="d-flex justify-content-between px-3 py-2 {{ !$loop->last ? 'border-bottom' : '' }}">
+                                        <div>
+                                            <div class="fw-bold">{{ \Carbon\Carbon::createFromFormat('Y-m', $item['period'])->translatedFormat('F Y') }}</div>
+                                        </div>
+                                        <div class="fw-bold">Rp {{ number_format($item['amount'], 0, ',', '.') }}</div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="alert alert-info border-0 shadow-none mb-0">
+                        <h6 class="alert-heading fw-bold mb-2"><i class="fa fa-info-circle me-1"></i> Instruksi Pembayaran</h6>
+                        <p class="small mb-2">Silakan transfer sesuai nominal di atas ke rekening berikut:</p>
+                        <div class="bg-white p-3 rounded border mb-2">
+                            <div class="text-muted small">{{ $paymentInstruction['bank_name'] }}</div>
+                            <div class="fw-bold fs-16px mb-1">{{ $paymentInstruction['account_number'] }}</div>
+                            <div class="text-muted small">a/n {{ $paymentInstruction['account_holder'] }}</div>
+                        </div>
+                        <p class="small mb-0 text-muted">Setelah transfer, mohon unggah bukti pembayaran di form sebelah kanan.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-7">
+            <div class="card border-0 shadow-sm rounded-4 h-100">
+                <div class="card-body p-4">
+                    @if ($outlet->billing_status === 'paid')
+                        <div class="text-center py-5">
+                            <div class="text-success mb-3">
+                                <i class="fa fa-check-circle fa-5x"></i>
+                            </div>
+                            <h3>QRIS Aktif</h3>
+                            <p class="text-muted">Terima kasih. Perpanjangan QRIS telah dikonfirmasi oleh administrator.</p>
+                            @if ($outlet->billing_payment?->paid_at)
+                                <div class="badge bg-light text-dark p-2 border">
+                                    Diaktifkan pada: {{ $outlet->billing_payment->paid_at->format('d/m/Y H:i') }}
+                                </div>
+                            @endif
+                        </div>
+                    @elseif ($outlet->billing_status === 'pending')
+                        <div class="text-center py-5">
+                            <div class="text-warning mb-3">
+                                <i class="fa fa-clock fa-5x"></i>
+                            </div>
+                            <h3>Menunggu Verifikasi</h3>
+                            <p class="text-muted">Bukti pembayaran Anda sedang diproses oleh tim kami. Kami akan segera memperbarui masa aktif QRIS Anda.</p>
+                            
+                            <div class="mt-4 text-start">
+                                <label class="fw-bold mb-2">Bukti yang telah diunggah:</label>
+                                <a href="{{ asset('storage/' . $outlet->billing_payment->proof_of_payment) }}" target="_blank" class="d-block">
+                                    <img src="{{ asset('storage/' . $outlet->billing_payment->proof_of_payment) }}" class="img-fluid rounded border" style="max-height: 200px;">
+                                </a>
+                            </div>
+                        </div>
+                    @else
+                        <h5 class="fw-bold mb-3">Unggah Bukti Pembayaran</h5>
+                        <p class="text-muted mb-4">Mohon pastikan gambar bukti transfer terlihat jelas agar proses verifikasi lebih cepat.</p>
+
+                        <form action="{{ route('partner.outlets.billing.upload', $outlet) }}" method="POST" enctype="multipart/form-data">
+                            @csrf
+                            
+                            <div class="upload-zone p-5 text-center border-2 border-dashed rounded-4 mb-4 bg-light">
+                                <i class="fa fa-cloud-upload-alt fa-4x text-muted mb-3"></i>
+                                <h6 class="mb-2">Klik untuk memilih gambar bukti transfer</h6>
+                                <p class="text-muted small mb-3">Format: JPG, PNG (Maks 5MB)</p>
+                                <input type="file" name="proof_of_payment" class="form-control" accept="image/*" required>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm">
+                                <i class="fa fa-paper-plane me-1"></i> Kirim Konfirmasi Pembayaran
+                            </button>
+                        </form>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-4">
+        <a href="{{ route('partner.qris-billing.report') }}" class="btn btn-default">
+            <i class="fa fa-arrow-left me-1"></i> Kembali ke Laporan
+        </a>
+    </div>
+@endsection
+
+@push('styles')
+<style>
+    .bg-primary-transparent-1 {
+        background-color: rgba(0, 172, 172, 0.1);
+    }
+    .upload-zone {
+        transition: all 0.3s ease;
+        border: 2px dashed #ddd;
+    }
+    .upload-zone:hover {
+        border-color: #00acac;
+        background-color: rgba(0, 172, 172, 0.02);
+    }
+</style>
+@endpush

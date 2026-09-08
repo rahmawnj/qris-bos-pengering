@@ -1,0 +1,8 @@
+[13-May-2026 07:18:29 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Member/DashboardMemberController.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Member/DashboardMemberController.php on line 11
+[13-May-2026 08:50:21 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Member/DashboardMemberController.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Member/DashboardMemberController.php on line 11

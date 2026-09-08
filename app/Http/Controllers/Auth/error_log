@@ -1,0 +1,80 @@
+[13-May-2026 01:16:33 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/RegisterController.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/RegisterController.php on line 14
+[13-May-2026 01:16:33 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/VerificationController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/VerificationController.php on line 9
+[13-May-2026 01:16:33 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ForgotPasswordController.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ForgotPasswordController.php on line 8
+[13-May-2026 01:16:34 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/LoginController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/LoginController.php on line 9
+[13-May-2026 01:16:34 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ProfileController.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ProfileController.php on line 12
+[13-May-2026 01:16:58 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/OutletLoginController.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/OutletLoginController.php on line 12
+[13-May-2026 01:16:58 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ConfirmPasswordController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ConfirmPasswordController.php on line 9
+[13-May-2026 01:16:58 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ResetPasswordController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ResetPasswordController.php on line 9
+[13-May-2026 13:43:16 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ConfirmPasswordController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ConfirmPasswordController.php on line 9
+[13-May-2026 15:13:17 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/OutletLoginController.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/OutletLoginController.php on line 12
+[13-May-2026 15:13:17 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ConfirmPasswordController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ConfirmPasswordController.php on line 9
+[13-May-2026 15:13:18 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ResetPasswordController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ResetPasswordController.php on line 9
+[13-May-2026 15:13:19 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/LoginController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/LoginController.php on line 9
+[13-May-2026 15:13:20 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ProfileController.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ProfileController.php on line 12
+[13-May-2026 15:13:21 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/VerificationController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/VerificationController.php on line 9
+[13-May-2026 15:13:21 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/RegisterController.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/RegisterController.php on line 14
+[13-May-2026 15:13:22 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ForgotPasswordController.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ForgotPasswordController.php on line 8
+[13-May-2026 18:02:45 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ForgotPasswordController.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/ForgotPasswordController.php on line 8
+[13-May-2026 19:24:46 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/OutletLoginController.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/OutletLoginController.php on line 12
+[13-May-2026 19:26:50 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/VerificationController.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Auth/VerificationController.php on line 9

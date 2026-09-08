@@ -1,0 +1,64 @@
+[12-May-2026 16:57:58 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php:24
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php on line 24
+[12-May-2026 16:57:59 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php:56
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php on line 56
+[12-May-2026 17:12:38 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php on line 17
+[12-May-2026 17:34:58 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Broadcast" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php on line 16
+[12-May-2026 19:25:13 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php:24
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php on line 24
+[12-May-2026 19:25:19 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php:56
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php on line 56
+[12-May-2026 19:25:23 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php on line 17
+[12-May-2026 19:25:57 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Broadcast" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php on line 16
+[12-May-2026 20:59:44 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php:24
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php on line 24
+[12-May-2026 21:00:27 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php:56
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php on line 56
+[12-May-2026 21:00:27 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php on line 17
+[12-May-2026 21:00:47 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Broadcast" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php on line 16
+[13-May-2026 04:45:10 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php:24
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/api.php on line 24
+[13-May-2026 04:46:16 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Route" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php:56
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/web.php on line 56
+[13-May-2026 04:50:29 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Artisan" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/console.php on line 17
+[13-May-2026 04:55:46 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\Facades\Broadcast" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/routes/channels.php on line 16

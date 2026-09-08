@@ -1,0 +1,16 @@
+[12-May-2026 20:11:24 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Notifications\Notification" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/ApplicationNotification.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/ApplicationNotification.php on line 10
+[12-May-2026 20:11:37 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Notifications\Notification" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/JobOfferNotification.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/JobOfferNotification.php on line 10
+[12-May-2026 20:47:26 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Notifications\Notification" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/JobOfferNotification.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/JobOfferNotification.php on line 10
+[12-May-2026 23:07:37 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Notifications\Notification" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/ApplicationNotification.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Notifications/ApplicationNotification.php on line 10

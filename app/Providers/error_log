@@ -1,0 +1,48 @@
+[12-May-2026 18:26:09 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Support\Providers\AuthServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AuthServiceProvider.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AuthServiceProvider.php on line 8
+[12-May-2026 18:26:10 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/BroadcastServiceProvider.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/BroadcastServiceProvider.php on line 8
+[12-May-2026 18:55:01 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Interface "Illuminate\Contracts\Auth\UserProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/ConfigUserProvider.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/ConfigUserProvider.php on line 9
+[12-May-2026 20:21:24 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Support\Providers\EventServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/EventServiceProvider.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/EventServiceProvider.php on line 10
+[12-May-2026 20:21:33 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Support\Providers\RouteServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/RouteServiceProvider.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/RouteServiceProvider.php on line 11
+[12-May-2026 23:39:04 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AppServiceProvider.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AppServiceProvider.php on line 14
+[13-May-2026 09:27:58 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Support\Providers\AuthServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AuthServiceProvider.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AuthServiceProvider.php on line 8
+[13-May-2026 09:28:03 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/BroadcastServiceProvider.php:8
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/BroadcastServiceProvider.php on line 8
+[13-May-2026 09:28:21 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Interface "Illuminate\Contracts\Auth\UserProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/ConfigUserProvider.php:9
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/ConfigUserProvider.php on line 9
+[13-May-2026 09:29:19 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Support\Providers\RouteServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/RouteServiceProvider.php:11
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/RouteServiceProvider.php on line 11
+[13-May-2026 09:30:24 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Foundation\Support\Providers\EventServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/EventServiceProvider.php:10
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/EventServiceProvider.php on line 10
+[13-May-2026 09:31:29 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "Illuminate\Support\ServiceProvider" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AppServiceProvider.php:14
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Providers/AppServiceProvider.php on line 14

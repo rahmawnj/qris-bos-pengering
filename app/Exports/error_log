@@ -1,0 +1,15 @@
+[12-May-2026 21:47:32 Asia/Jakarta] PHP Fatal error:  Trait "Maatwebsite\Excel\Concerns\RegistersEventListeners" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/PartnerTransactionsExport.php on line 22
+[12-May-2026 23:12:15 Asia/Jakarta] PHP Fatal error:  Trait "Maatwebsite\Excel\Concerns\RegistersEventListeners" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/ManualTransactionsExport.php on line 22
+[12-May-2026 23:41:08 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Interface "Maatwebsite\Excel\Concerns\WithTitle" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/TransactionsExport.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/TransactionsExport.php on line 12
+[13-May-2026 03:09:08 Asia/Jakarta] PHP Fatal error:  Trait "Maatwebsite\Excel\Concerns\RegistersEventListeners" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/AdminTransactionsExport.php on line 22
+[13-May-2026 05:11:23 Asia/Jakarta] PHP Fatal error:  Trait "Maatwebsite\Excel\Concerns\RegistersEventListeners" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/QrisTransactionsExport.php on line 22
+[13-May-2026 11:08:33 Asia/Jakarta] PHP Fatal error:  Trait "Maatwebsite\Excel\Concerns\RegistersEventListeners" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/PartnerTransactionsExport.php on line 22
+[13-May-2026 11:08:40 Asia/Jakarta] PHP Fatal error:  Trait "Maatwebsite\Excel\Concerns\RegistersEventListeners" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/ManualTransactionsExport.php on line 22
+[13-May-2026 11:09:01 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Interface "Maatwebsite\Excel\Concerns\WithTitle" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/TransactionsExport.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/TransactionsExport.php on line 12
+[13-May-2026 11:10:06 Asia/Jakarta] PHP Fatal error:  Trait "Maatwebsite\Excel\Concerns\RegistersEventListeners" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Exports/AdminTransactionsExport.php on line 22

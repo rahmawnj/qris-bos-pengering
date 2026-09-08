@@ -1,0 +1,24 @@
+[13-May-2026 19:22:46 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/TransactionController.php:17
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/TransactionController.php on line 17
+[13-May-2026 20:35:48 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/WithdrawalController.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/WithdrawalController.php on line 13
+[13-May-2026 20:53:42 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/BypassLogController.php:12
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/BypassLogController.php on line 12
+[13-May-2026 21:45:01 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/DashboardController.php:20
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/DashboardController.php on line 20
+[13-May-2026 22:12:14 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/AddonController.php:13
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/AddonController.php on line 13
+[13-May-2026 22:13:19 Asia/Jakarta] PHP Fatal error:  Uncaught Error: Class "App\Http\Controllers\Controller" not found in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/OwnerController.php:16
+Stack trace:
+#0 {main}
+  thrown in /home/lauq3172/public_html/qris2.laundrytapkartu.com/app/Http/Controllers/Admin/OwnerController.php on line 16
