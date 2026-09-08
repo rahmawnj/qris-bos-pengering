@@ -70,7 +70,6 @@
                             @php
                                 $outlet = $payment->outlet;
                                 $owner = $outlet?->owner;
-                                $hasPendingWithdrawal = $owner && $owner->withdrawals()->where('status', 'pending')->exists();
                                 $periodStart = $payment->period_start;
                                 $periodEnd = $payment->period_end;
                                 $periodText = $periodStart && $periodEnd
@@ -111,15 +110,9 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
-                                    @if ($hasPendingWithdrawal)
-                                        <button type="button" class="btn btn-secondary btn-xs" disabled title="Owner masih memiliki penarikan yang sedang menunggu diproses.">
-                                            <i class="fa fa-lock me-1"></i> Tertunda
-                                        </button>
-                                    @else
-                                        <a href="{{ route('admin.qris-billing.payment.show', $payment) }}" class="btn btn-info btn-xs">
-                                            <i class="fa fa-check-circle me-1"></i> Konfirmasi
-                                        </a>
-                                    @endif
+                                    <a href="{{ route('admin.qris-billing.payment.show', $payment) }}" class="btn btn-info btn-xs">
+                                        <i class="fa fa-check-circle me-1"></i> Konfirmasi
+                                    </a>
                                 </td>
                             </tr>
                         @empty
