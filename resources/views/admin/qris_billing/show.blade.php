@@ -167,20 +167,10 @@
                             </a>
                         </div>
 
-                        @php
-                            $hasPendingWithdrawal = $outlet->owner && $outlet->owner->withdrawals()->where('status', 'pending')->exists();
-                        @endphp
-
                         @if ($outlet->billing_status !== 'paid')
                             <div class="alert alert-warning mb-4 text-start">
                                 <i class="fa fa-info-circle me-1"></i> Harap pastikan bukti transfer di atas valid dan nominal sudah masuk ke rekening sebelum melakukan konfirmasi.
                             </div>
-
-                            @if ($hasPendingWithdrawal)
-                                <div class="alert alert-secondary text-start mb-4">
-                                    <i class="fa fa-lock me-1"></i> Owner ini masih memiliki penarikan yang sedang menunggu diproses, jadi tombol konfirmasi di nonaktifkan sementara.
-                                </div>
-                            @endif
 
                             <form action="{{ route('admin.qris-billing.mark-paid', $outlet) }}" method="POST">
                                 @csrf
@@ -189,8 +179,7 @@
                                 <input type="hidden" name="payment_id" value="{{ $outlet->billing_payment->id }}">
                                 
                                 <button type="submit" class="btn btn-primary btn-lg px-5 w-100" 
-                                    {{ $hasPendingWithdrawal ? 'disabled' : '' }}
-                                    onclick="return {{ $hasPendingWithdrawal ? 'false' : "confirm('Konfirmasi perpanjangan QRIS ini?')" }};">
+                                    onclick="return confirm('Konfirmasi perpanjangan QRIS ini?');">
                                     <i class="fa fa-check-circle me-1"></i> ACC Perpanjangan
                                 </button>
                             </form>
