@@ -21,6 +21,8 @@
                     <div class="card w-100 border-0 overflow-hidden outlet-card">
                         @if ($outlet->has_overdue_billing)
                             <div class="status-ribbon bg-danger">Terblokir</div>
+                        @elseif ($outlet->qris_billing_prepayment_window)
+                            <div class="status-ribbon status-prepay">Segera Jatuh Tempo</div>
                         @elseif ($outlet->status)
                             <div class="status-ribbon status-open">Buka</div>
                         @else
@@ -58,30 +60,33 @@
                                     <i class="fas fa-map-marker-alt me-2"></i>{{ $outlet->address }}
                                 </div>
 
-	                                @if ($outlet->qris_billing_enabled)
-	                                    @php
-	                                        $unpaidSummary = $outlet->qrisBillingUnpaidSummary();
-	                                        $totalUnpaidAmount = $unpaidSummary['amount'];
-	                                        $hasUnpaidBilling = $unpaidSummary['count'] > 0;
-	                                    @endphp
-	                                    <div class="outlet-qris-billing {{ $outlet->has_overdue_billing ? 'is-due' : '' }}">
-	                                        <div class="outlet-qris-billing-info">
-	                                            <i class="fas fa-calendar-day"></i>
-	                                            <span>
+                                @if ($outlet->qris_billing_enabled)
+                                    @php
+                                        $unpaidSummary = $outlet->qrisBillingUnpaidSummary();
+                                        $totalUnpaidAmount = $unpaidSummary['amount'];
+                                        $hasUnpaidBilling = $unpaidSummary['count'] > 0;
+                                        $isPrepayWindow = $outlet->qris_billing_prepayment_window;
+                                    @endphp
+                                    <div class="outlet-qris-billing {{ $outlet->has_overdue_billing ? 'is-due' : ($isPrepayWindow ? 'is-prepay' : '') }}">
+                                        <div class="outlet-qris-billing-info">
+                                            <i class="fas fa-calendar-day"></i>
+                                            <span>
                                                 @if($totalUnpaidAmount > 0)
                                                     Perpanjangan: Rp {{ number_format($totalUnpaidAmount, 0, ',', '.') }}
-	                                                @else
-	                                                    Perpanjangan QRIS: Rp {{ number_format($outlet->qris_billing_amount, 0, ',', '.') }}
-	                                                @endif
-	                                                @if (!$hasUnpaidBilling)
-	                                                    <br>
-	                                                    Aktif sampai: {{ $outlet->qris_billing_due_date ? $outlet->qris_billing_due_date->format('d/m/Y') : '-' }}
-	                                                @endif
-	                                            </span>
+                                                @else
+                                                    Perpanjangan QRIS: Rp {{ number_format($outlet->qris_billing_amount, 0, ',', '.') }}
+                                                @endif
+                                                @if (!$hasUnpaidBilling)
+                                                    <br>
+                                                    Aktif sampai: {{ $outlet->qris_billing_due_date ? $outlet->qris_billing_due_date->format('d/m/Y') : '-' }}
+                                                @endif
+                                            </span>
                                         </div>
                                         <div class="outlet-qris-billing-status">
                                             @if ($outlet->has_overdue_billing)
                                                 <strong class="text-danger"><i class="fas fa-exclamation-triangle me-1"></i> Terblokir</strong>
+                                            @elseif ($isPrepayWindow)
+                                                <strong class="text-warning-emphasis"><i class="fas fa-clock me-1"></i> Segera Jatuh Tempo</strong>
                                             @elseif ($outlet->qris_billing_paid_current_period)
                                                 <strong class="text-success">Sudah Dibayar</strong>
                                             @else
@@ -95,9 +100,9 @@
                                     class="btn outlet-detail-btn">
                                     <i class="fas fa-eye me-1"></i> Lihat Detail
                                 </a>
-	                                @if ($outlet->qris_billing_enabled)
-	                                    <a href="{{ route('partner.qris-billing.show', $outlet) }}"
-	                                        class="btn btn-outline-primary btn-sm mt-2">
+                                @if ($outlet->qris_billing_enabled)
+                                    <a href="{{ route('partner.qris-billing.show', $outlet) }}"
+                                        class="btn btn-outline-primary btn-sm mt-2">
                                         <i class="fas fa-file-invoice-dollar me-1"></i> Perpanjangan QRIS
                                     </a>
                                 @endif
@@ -157,12 +162,12 @@
 
                             <div class="mb-3">
                                 <label for="timezone" class="form-label">Zona Waktu <span class="text-danger">*</span></label>
-                              <select class="form-select @error('timezone') is-invalid @enderror" id="timezone" name="timezone" required>
-        <option value="">Pilih Zona Waktu</option>
-        <option value="WIB" {{ old('timezone') == 'WIB' ? 'selected' : '' }}>WIB (Asia/Jakarta)</option>
-        <option value="WITA" {{ old('timezone') == 'WITA' ? 'selected' : '' }}>WITA (Asia/Makassar)</option>
-        <option value="WIT" {{ old('timezone') == 'WIT' ? 'selected' : '' }}>WIT (Asia/Jayapura)</option>
-    </select>
+                                <select class="form-select @error('timezone') is-invalid @enderror" id="timezone" name="timezone" required>
+                                    <option value="">Pilih Zona Waktu</option>
+                                    <option value="WIB" {{ old('timezone') == 'WIB' ? 'selected' : '' }}>WIB (Asia/Jakarta)</option>
+                                    <option value="WITA" {{ old('timezone') == 'WITA' ? 'selected' : '' }}>WITA (Asia/Makassar)</option>
+                                    <option value="WIT" {{ old('timezone') == 'WIT' ? 'selected' : '' }}>WIT (Asia/Jayapura)</option>
+                                </select>
                                 @error('timezone')
                                     <div class="invalid-feedback">{{ $message }}</div>
                                 @enderror
@@ -329,6 +334,12 @@
             background: #fff3cd;
         }
 
+        .outlet-qris-billing.is-prepay {
+            color: #664d03;
+            background: #fff3cd;
+            border: 1px solid #ffe69c;
+        }
+
         .outlet-address i {
             color: #9aa1aa;
         }
@@ -376,6 +387,11 @@
 
         .status-closed {
             background: #e3342f;
+        }
+
+        .status-prepay {
+            background: #f0ad00;
+            color: #fff;
         }
 
         .blink {
