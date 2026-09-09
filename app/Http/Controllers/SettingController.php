@@ -18,6 +18,7 @@ class SettingController extends Controller
         $qrisBillingPricePerDevice = Setting::getInt('qris_billing_price_per_device', 100000);
         $qrisBillingMaxFeeMode = Setting::getValue('qris_billing_max_fee_mode', 'capped');
         $qrisBillingMaxFee = Setting::getInt('qris_billing_max_fee', 500000);
+        $qrisBillingAdvanceDays = Setting::getInt('qris_billing_advance_days', 5);
         $qrisBillingPaymentBankName = Setting::getValue('qris_billing_payment_bank_name', 'Bank BCA');
         $qrisBillingPaymentAccountNumber = Setting::getValue('qris_billing_payment_account_number', '8290-xxxx-xxxx');
         $qrisBillingPaymentAccountHolder = Setting::getValue('qris_billing_payment_account_holder', 'Bos Pengering');
@@ -30,6 +31,7 @@ class SettingController extends Controller
             'qrisBillingPricePerDevice',
             'qrisBillingMaxFeeMode',
             'qrisBillingMaxFee',
+            'qrisBillingAdvanceDays',
             'qrisBillingPaymentBankName',
             'qrisBillingPaymentAccountNumber',
             'qrisBillingPaymentAccountHolder'
@@ -44,6 +46,7 @@ class SettingController extends Controller
             'qris_billing_price_per_device' => 'required|integer|min:0',
             'qris_billing_max_fee_mode' => ['required', 'string', Rule::in(['capped', 'unlimited'])],
             'qris_billing_max_fee' => 'required_if:qris_billing_max_fee_mode,capped|nullable|integer|min:0',
+            'qris_billing_advance_days' => 'required|integer|min:0|max:31',
             'qris_billing_payment_bank_name' => 'required|string|max:100',
             'qris_billing_payment_account_number' => 'required|string|max:100',
             'qris_billing_payment_account_holder' => 'required|string|max:100',
@@ -58,6 +61,7 @@ class SettingController extends Controller
         Setting::setValue('qris_billing_price_per_device', $request->input('qris_billing_price_per_device'));
         Setting::setValue('qris_billing_max_fee_mode', $request->input('qris_billing_max_fee_mode'));
         Setting::setValue('qris_billing_max_fee', $request->input('qris_billing_max_fee', 0));
+        Setting::setValue('qris_billing_advance_days', $request->input('qris_billing_advance_days'));
         Setting::setValue('qris_billing_payment_bank_name', $request->input('qris_billing_payment_bank_name'));
         Setting::setValue('qris_billing_payment_account_number', $request->input('qris_billing_payment_account_number'));
         Setting::setValue('qris_billing_payment_account_holder', $request->input('qris_billing_payment_account_holder'));
