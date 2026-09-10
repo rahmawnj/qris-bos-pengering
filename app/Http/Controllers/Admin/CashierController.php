@@ -62,7 +62,7 @@ class CashierController extends Controller
                     $user = $cashier->user;
                     $outlet = $cashier->outlet;
                     $userImage = $user?->image ? asset($user->image) : asset('assets/img/default-user.png');
-                    $isActive = (bool) ($outlet?->owner?->status ?? false);
+                    $isActive = (bool) $cashier->status;
 
                     return [
                         'number' => $start + $index + 1,
@@ -114,7 +114,7 @@ class CashierController extends Controller
             $data = $cashiers->map(function (Cashier $cashier, int $index) {
                 $user = $cashier->user;
                 $outlet = $cashier->outlet;
-                $isActive = (bool) ($outlet?->owner?->status ?? false);
+                $isActive = (bool) $cashier->status;
 
                 return [
                     'number' => $index + 1,
