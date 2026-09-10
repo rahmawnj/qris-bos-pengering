@@ -52,15 +52,8 @@
                 <span>Sudah lunas: <strong>Rp {{ number_format($summary['paid_amount'], 0, ',', '.') }}</strong></span>
             </div>
 
-            @include('qris_billing._table', [
-                'outlets' => $outlets,
-                'showOwner' => true,
-                'showDeviceCount' => false,
-                'canConfirm' => true,
-                'actionRouteName' => 'admin.qris-billing.show',
-                'actionLabel' => 'Detail',
-                'actionIcon' => 'fa-search',
-                'actionClass' => 'btn-info',
+            @include('qris_billing._report_table', [
+                'payments' => $payments,
             ])
         </div>
     </div>
