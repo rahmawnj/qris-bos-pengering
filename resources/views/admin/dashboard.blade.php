@@ -110,9 +110,9 @@
 
     <div class="stat-grid mb-4" style="margin-top: 24px;">
         <div class="stat-card stat-orange">
-            <div class="stat-title">Pendapatan</div>
+            <div class="stat-title">Omzet</div>
             <div class="stat-value">Rp {{ number_format($qrisBalance ?? 0, 0, ',', '.') }}</div>
-            <div class="stat-sub">Total balance owner sesuai filter brand/outlet</div>
+            <div class="stat-sub">Total omzet berdasarkan filter tanggal &amp; outlet</div>
             <div class="stat-icon"><i class="fa fa-wallet"></i></div>
         </div>
         <div class="stat-card stat-green">
