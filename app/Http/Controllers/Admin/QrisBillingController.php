@@ -9,6 +9,7 @@ use App\Models\QrisBillingPayment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 
 class QrisBillingController extends Controller
 {
@@ -22,6 +23,36 @@ class QrisBillingController extends Controller
 
     public function show(Request $request, Outlet $outlet) { $period=$request->input('period',now()->format('Y-m')); $outlet->load(['owner.user','owner.withdrawals','devices','qrisBillingPayments']); $outlet=$this->decorateOutlet($outlet,$period); $billingBreakdown=$this->billingBreakdown($outlet); return view('admin.qris_billing.show',compact('outlet','period','billingBreakdown')); }
     public function showPayment(Request $request,QrisBillingPayment $payment) { $period=$request->input('period',$payment->period_end?->format('Y-m')??$payment->period_start?->format('Y-m')??now()->format('Y-m')); $outlet=$this->outletFromBillingPayment($payment); if(!$outlet)abort(404,'Data outlet tidak ditemukan.'); $outlet->load(['owner.user','owner.withdrawals','devices']); $billingBreakdown=$this->billingBreakdown($outlet); return view('admin.qris_billing.show',compact('outlet','period','billingBreakdown')); }
+
+    public function updateProof(Request $request, QrisBillingPayment $payment)
+    {
+        $request->validate([
+            'proof_of_payment' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'proof_of_payment.required' => 'Silakan pilih foto bukti pembayaran.',
+            'proof_of_payment.image' => 'File harus berupa gambar.',
+            'proof_of_payment.mimes' => 'Format foto harus JPG, JPEG, PNG, atau WEBP.',
+            'proof_of_payment.max' => 'Ukuran foto maksimal 5 MB.',
+        ]);
+
+        $oldProof = $payment->proof_of_payment;
+        $newProof = $request->file('proof_of_payment')->store('qris-billing', 'public');
+
+        try {
+            $payment->update(['proof_of_payment' => $newProof]);
+
+            if ($oldProof && Storage::disk('public')->exists($oldProof)) {
+                Storage::disk('public')->delete($oldProof);
+            }
+        } catch (\Throwable $e) {
+            if (Storage::disk('public')->exists($newProof)) {
+                Storage::disk('public')->delete($newProof);
+            }
+            throw $e;
+        }
+
+        return back()->with('success', 'Bukti pembayaran berhasil diganti. Foto lama sudah dihapus.');
+    }
 
     public function markPaid(Request $request, Outlet $outlet)
     {
