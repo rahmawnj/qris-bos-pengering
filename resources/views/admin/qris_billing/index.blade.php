@@ -16,7 +16,26 @@
         <div class="alert alert-danger">{{ session('error') }}</div>
     @endif
 
-    @include('qris_billing._summary', ['summary' => $summary])
+    <div class="row mb-4">
+        <div class="col-md-6 col-12 mb-3">
+            <div class="qris-billing-summary">
+                <div class="summary-icon bg-warning text-dark"><i class="fa fa-clock"></i></div>
+                <div>
+                    <div class="summary-label">Jumlah Pending</div>
+                    <div class="summary-value">{{ $summary['pending'] }}</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-12 mb-3">
+            <div class="qris-billing-summary">
+                <div class="summary-icon bg-info"><i class="fa fa-money-bill-wave"></i></div>
+                <div>
+                    <div class="summary-label">Nominal Perpanjangan Pending</div>
+                    <div class="summary-value">Rp {{ number_format($summary['unpaid_amount'] ?? $summary['amount'] ?? 0, 0, ',', '.') }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="panel panel-inverse">
         <div class="panel-heading">
