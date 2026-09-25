@@ -58,11 +58,11 @@ class DashboardController extends Controller
                 $daterangeFilter = $startDate->format('Y/m/d') . ' - ' . $endDate->format('Y/m/d');
             }
         } else {
-            // DEFAULT: user belum kirim filter (7 hari terakhir)
-            $startDate = Carbon::now()->subDays(6)->startOfDay();
-            $endDate = Carbon::now()->endOfDay();
+            // DEFAULT: user belum kirim filter (bulan ini)
+            $startDate = Carbon::now()->startOfMonth()->startOfDay();
+            $endDate = Carbon::now()->endOfMonth()->endOfDay();
             $daterangeFilter = $startDate->format('Y/m/d') . ' - ' . $endDate->format('Y/m/d');
-            $defaultRangeLabel = '7 Hari Terakhir';
+            $defaultRangeLabel = 'Bulan Ini';
         }
 
         $allowedOutletIds = getData()->getOutletIds();
