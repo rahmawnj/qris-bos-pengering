@@ -9,7 +9,13 @@
 @section('content')
     <x-breadcrumb :items="$items" :title="$title" :subtitle="$subtitle" />
 
-    @include('qris_billing._summary', ['summary' => $summary, 'showDue' => false, 'totalLabel' => 'Total Data'])
+    @include('qris_billing._summary', [
+        'summary' => $summary,
+        'showDue' => false,
+        'showPending' => false,
+        'paidAsAmount' => true,
+        'totalLabel' => 'Total Data',
+    ])
 
     <div class="panel panel-inverse">
         <div class="panel-heading">
