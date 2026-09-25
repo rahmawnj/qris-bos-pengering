@@ -160,11 +160,25 @@
                 <div class="panel-body text-center p-4">
                     @if ($outlet->billing_payment && $outlet->billing_payment->proof_of_payment)
                         <div class="mb-4">
-                            <h5 class="text-start mb-3">Bukti Transfer</h5>
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <h5 class="text-start mb-0">Bukti Transfer</h5>
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="document.getElementById('proof-of-payment-input').click()">
+                                    <i class="fa fa-edit me-1"></i> Ganti Foto
+                                </button>
+                            </div>
                             <a href="{{ asset('storage/' . $outlet->billing_payment->proof_of_payment) }}" target="_blank">
-                                <img src="{{ asset('storage/' . $outlet->billing_payment->proof_of_payment) }}" 
+                                <img src="{{ asset('storage/' . $outlet->billing_payment->proof_of_payment) }}"
                                     class="img-fluid rounded border shadow-sm" style="max-height: 500px;" alt="Bukti Pembayaran">
                             </a>
+
+                            <form id="proof-update-form" action="{{ route('admin.qris-billing.payment.proof.update', $outlet->billing_payment) }}" method="POST" enctype="multipart/form-data" class="mt-3 text-start">
+                                @csrf
+                                <input id="proof-of-payment-input" type="file" name="proof_of_payment" accept="image/jpeg,image/png,image/webp" class="d-none"
+                                    onchange="if (this.files.length) document.getElementById('proof-update-form').submit();">
+                                <div class="text-muted small">
+                                    Pilih foto baru untuk mengganti bukti yang sekarang. Foto lama akan dihapus otomatis.
+                                </div>
+                            </form>
                         </div>
 
                         @if ($outlet->billing_status !== 'paid')
