@@ -14,6 +14,7 @@
         'showDue' => false,
         'showPending' => false,
         'paidAsAmount' => true,
+        'paidFullWidth' => true,
         'totalLabel' => 'Total Data',
     ])
 
