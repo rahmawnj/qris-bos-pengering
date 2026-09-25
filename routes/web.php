@@ -137,6 +137,7 @@ Route::get('export/qris-transactions', [ExportController::class, 'qrisTransactio
         Route::get('qris-billing', [AdminQrisBillingController::class, 'index'])->name('qris-billing.index');
         Route::get('qris-billing/report', [AdminQrisBillingController::class, 'report'])->name('qris-billing.report');
         Route::get('qris-billing/payment/{payment}', [AdminQrisBillingController::class, 'showPayment'])->name('qris-billing.payment.show');
+        Route::post('qris-billing/payment/{payment}/proof', [AdminQrisBillingController::class, 'updateProof'])->name('qris-billing.payment.proof.update');
         Route::get('qris-billing/{outlet}', [AdminQrisBillingController::class, 'show'])->name('qris-billing.show');
         Route::patch('qris-billing/{outlet}/mark-paid', [AdminQrisBillingController::class, 'markPaid'])->name('qris-billing.mark-paid');
         Route::patch('outlets/{outlet}/qris-billing/mark-paid', [AdminQrisBillingController::class, 'markPaid'])->name('outlets.qris-billing.mark-paid');
