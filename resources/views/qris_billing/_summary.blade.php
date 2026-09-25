@@ -1,6 +1,8 @@
 @php
     $showDue = $showDue ?? true;
     $totalLabel = $totalLabel ?? 'Total Outlet';
+    $showPending = $showPending ?? true;
+    $paidAsAmount = $paidAsAmount ?? false;
     $columnClass = $showDue ? 'col-md-2 col-6' : 'col-md-4 col-6';
 @endphp
 
@@ -25,21 +27,23 @@
             </div>
         </div>
     @endif
-    <div class="{{ $columnClass }} mb-3">
-        <div class="qris-billing-summary">
-            <div class="summary-icon bg-warning text-dark"><i class="fa fa-clock"></i></div>
-            <div>
-                <div class="summary-label">Pending</div>
-                <div class="summary-value">{{ $summary['pending'] }}</div>
+    @if ($showPending)
+        <div class="{{ $columnClass }} mb-3">
+            <div class="qris-billing-summary">
+                <div class="summary-icon bg-warning text-dark"><i class="fa fa-clock"></i></div>
+                <div>
+                    <div class="summary-label">Pending</div>
+                    <div class="summary-value">{{ $summary['pending'] }}</div>
+                </div>
             </div>
         </div>
-    </div>
+    @endif
     <div class="{{ $columnClass }} mb-3">
         <div class="qris-billing-summary">
             <div class="summary-icon bg-success"><i class="fa fa-check"></i></div>
             <div>
-                <div class="summary-label">Aktif</div>
-                <div class="summary-value">{{ $summary['paid'] }}</div>
+                <div class="summary-label">{{ $paidAsAmount ? 'Total Nominal Lunas' : 'Aktif' }}</div>
+                <div class="summary-value">{{ $paidAsAmount ? 'Rp ' . number_format($summary['paid_amount'] ?? 0, 0, ',', '.') : $summary['paid'] }}</div>
             </div>
         </div>
     </div>
