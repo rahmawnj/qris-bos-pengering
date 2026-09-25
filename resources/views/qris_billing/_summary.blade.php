@@ -3,6 +3,7 @@
     $totalLabel = $totalLabel ?? 'Total Outlet';
     $showPending = $showPending ?? true;
     $paidAsAmount = $paidAsAmount ?? false;
+    $paidFullWidth = $paidFullWidth ?? false;
     $columnClass = $showDue ? 'col-md-2 col-6' : 'col-md-4 col-6';
 @endphp
 
@@ -38,7 +39,7 @@
             </div>
         </div>
     @endif
-    <div class="{{ $columnClass }} mb-3">
+    <div class="{{ $paidFullWidth ? 'col-12' : $columnClass }} mb-3">
         <div class="qris-billing-summary">
             <div class="summary-icon bg-success"><i class="fa fa-check"></i></div>
             <div>
