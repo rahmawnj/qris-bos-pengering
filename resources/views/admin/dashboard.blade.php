@@ -108,7 +108,7 @@
         $transactionsLink = $isAdminContext ? route('admin.transactions.index') : route('partner.transactions.index');
     @endphp
 
-    <div class="stat-grid mb-4">
+    <div class="stat-grid mb-4" style="margin-top: 24px;">
         <div class="stat-card stat-orange">
             <div class="stat-title">Pendapatan</div>
             <div class="stat-value">Rp {{ number_format($qrisBalance ?? 0, 0, ',', '.') }}</div>
