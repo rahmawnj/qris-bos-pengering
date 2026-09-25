@@ -4,7 +4,7 @@
     $showPending = $showPending ?? true;
     $paidAsAmount = $paidAsAmount ?? false;
     $paidFullWidth = $paidFullWidth ?? false;
-    $columnClass = $showDue ? 'col-md-2 col-6' : 'col-md-4 col-6';
+    $columnClass = $showDue ? 'col-md-2 col-6' : 'col-md-6 col-12';
 @endphp
 
 <div class="row mb-4">
@@ -39,7 +39,7 @@
             </div>
         </div>
     @endif
-    <div class="{{ $paidFullWidth ? 'col-12' : $columnClass }} mb-3">
+    <div class="{{ $paidFullWidth ? 'col-md-6 col-12' : $columnClass }} mb-3">
         <div class="qris-billing-summary">
             <div class="summary-icon bg-success"><i class="fa fa-check"></i></div>
             <div>
