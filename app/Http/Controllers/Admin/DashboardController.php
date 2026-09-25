@@ -355,13 +355,18 @@ class DashboardController extends Controller
         $applyDeviceFilterToTransactions($dropoffCountQuery);
         $dropoffCount = (int) $dropoffCountQuery->count();
 
-        $balanceOwnerIds = Outlet::whereIn('id', $outletIds)
-            ->pluck('owner_id')
-            ->filter()
-            ->unique()
-            ->values()
-            ->toArray();
-        $qrisBalance = (int) Owner::whereIn('id', $balanceOwnerIds)->sum('balance');
+        // Omzet kartu dihitung dari transaksi sukses agar mengikuti seluruh filter dashboard
+        // (tanggal, brand/outlet, dan device), bukan dari saldo Owner yang tidak terikat periode.
+        $qrisBalanceQuery = Transaction::query()
+            ->where('status', 'success')
+            ->whereIn('outlet_id', $outletIds);
+
+        if ($startDate && $endDate) {
+            $qrisBalanceQuery->whereBetween('created_at', [$startDate, $endDate]);
+        }
+
+        $applyDeviceFilterToTransactions($qrisBalanceQuery);
+        $qrisBalance = (int) $qrisBalanceQuery->sum('amount');
 
         $defaultRangeLabel = $defaultRangeLabel ?? null;
 
