@@ -258,73 +258,67 @@
 @endsection
 
 @push('scripts')
-    {{-- Moment.js is usually already in vendor.min.js or app.min.js --}}
-    <script type="text/javascript" src="{{ asset('assets/plugins/moment/min/moment.min.js') }}"></script>
-    <script type="text/javascript" src="{{ asset('assets/plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
+    {{-- Samakan dependency dengan date range picker halaman transaksi partner. --}}
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-daterangepicker/3.1/daterangepicker.min.js"></script>
 
     <script>
-        $(function() {
-            // Inisialisasi Date Range Picker
+        $(function () {
             var $dateRange = $('#filter-daterange');
 
-            if ($dateRange.length && typeof $.fn.daterangepicker === 'function' && typeof moment === 'function') {
-                $dateRange.daterangepicker({
-                    opens: 'left',
-                    timePicker: false,
-                    showDropdowns: true,
-                    autoUpdateInput: false,
-                    locale: {
-                        format: 'DD/MM/YYYY',
-                        separator: ' - ',
-                        cancelLabel: 'Clear',
-                        applyLabel: 'Terapkan',
-                        daysOfWeek: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-                        monthNames: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
-                            'September', 'Oktober', 'November', 'Desember'
-                        ],
-                        firstDay: 1
-                    },
-                    ranges: {
-                        'Hari Ini': [moment(), moment()],
-                        'Kemarin': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
-                        '7 Hari Terakhir': [moment().subtract(6, 'days'), moment()],
-                        '30 Hari Terakhir': [moment().subtract(29, 'days'), moment()],
-                        'Bulan Ini': [moment().startOf('month'), moment().endOf('month')],
-                        'Bulan Lalu': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
-                    }
-                });
+            // Jangan jalankan kalender sebelum kedua library benar-benar tersedia.
+            if (!$dateRange.length) return;
 
-                $dateRange.on('apply.daterangepicker', function(ev, picker) {
-                    $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
-                });
-
-                $dateRange.on('cancel.daterangepicker', function() {
-                    $(this).val('');
-                });
-
-                var initialDateRange = @json(request('daterange', ''));
-                if (initialDateRange) {
-                    $dateRange.val(initialDateRange);
-                } else {
-                    $dateRange.val('');
-                }
-            } else {
-                console.error('Date range picker belum siap. Pastikan jQuery, Moment.js, dan daterangepicker termuat.');
+            if (typeof window.moment !== 'function' ||
+                typeof $.fn.daterangepicker !== 'function') {
+                console.error('Date Range Picker gagal dimuat. Periksa koneksi dan file Moment.js / daterangepicker di Network.');
+                return;
             }
 
-            // Handle tombol "Clear" pada Date Range Picker
-            $('#filter-daterange').on('cancel.daterangepicker', function(ev, picker) {
+            $dateRange.daterangepicker({
+                opens: 'left',
+                timePicker: false,
+                showDropdowns: true,
+                autoUpdateInput: false,
+                locale: {
+                    format: 'DD/MM/YYYY',
+                    separator: ' - ',
+                    cancelLabel: 'Hapus',
+                    applyLabel: 'Terapkan',
+                    daysOfWeek: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                    monthNames: [
+                        'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                        'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                    ],
+                    firstDay: 1
+                },
+                ranges: {
+                    'Hari Ini': [moment(), moment()],
+                    'Kemarin': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                    '7 Hari Terakhir': [moment().subtract(6, 'days'), moment()],
+                    '30 Hari Terakhir': [moment().subtract(29, 'days'), moment()],
+                    'Bulan Ini': [moment().startOf('month'), moment().endOf('month')],
+                    'Bulan Lalu': [
+                        moment().subtract(1, 'month').startOf('month'),
+                        moment().subtract(1, 'month').endOf('month')
+                    ]
+                }
+            });
+
+            $dateRange.on('apply.daterangepicker', function (ev, picker) {
+                $(this).val(
+                    picker.startDate.format('DD/MM/YYYY') + ' - ' +
+                    picker.endDate.format('DD/MM/YYYY')
+                );
+            });
+
+            $dateRange.on('cancel.daterangepicker', function () {
                 $(this).val('');
             });
 
-            // Set nilai input kembali jika ada di request sebelumnya
-            @if (request('daterange'))
-                $('#filter-daterange').val('{{ request('daterange') }}');
-            @else
-                // Only set default if no daterange is in request
-                $('#filter-daterange').data('daterangepicker').setStartDate(moment());
-                $('#filter-daterange').data('daterangepicker').setEndDate(moment());
-            @endif
+            // Pertahankan rentang yang sedang dipakai saat halaman difilter.
+            var initialDateRange = @json(request('daterange', ''));
+            $dateRange.val(initialDateRange || '');
         });
     </script>
 @endpush
