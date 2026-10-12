@@ -238,7 +238,7 @@
                                     ?? 'N/A';
                             @endphp
                             <tr>
-                                <td>{{ $loop->iteration }}</td>
+                                <td>{{ $transactions->firstItem() + $loop->index }}</td>
                                 <td>
                                     {{ $transaction->order_id }}
                                 </td>
