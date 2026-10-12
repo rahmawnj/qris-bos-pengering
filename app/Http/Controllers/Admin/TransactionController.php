@@ -115,8 +115,8 @@ class TransactionController extends Controller
     $totalTransactionsAmountOverall = $query->sum('amount');
     $completedTransactionsCount = $totalTransactionsCountOverall;
 
-    // Execute Pagination
-    $transactions = $query->paginate(100);
+    // Execute Pagination and retain active filters when navigating pages.
+    $transactions = $query->paginate(100)->appends($request->except('page'));
 
     // --- PERUBAHAN UNTUK FOOTER (PER HALAMAN) ---
     // Menggunakan collection dari pagination untuk menghitung yang tampil saja
