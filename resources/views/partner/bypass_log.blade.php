@@ -9,7 +9,7 @@
 @push('styles')
     {{-- Diperlukan untuk Date Range Picker --}}
     <link rel="stylesheet" type="text/css"
-        href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
+        href="{{ asset('assets/plugins/bootstrap-daterangepicker/daterangepicker.css') }}" />
 
     {{-- Custom CSS untuk tampilan yang lebih rapi --}}
     <style>
@@ -259,7 +259,8 @@
 
 @push('scripts')
     {{-- Moment.js is usually already in vendor.min.js or app.min.js --}}
-    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
+    <script type="text/javascript" src="{{ asset('assets/plugins/moment/min/moment.min.js') }}"></script>
+    <script type="text/javascript" src="{{ asset('assets/plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
 
     <script>
         $(function() {
