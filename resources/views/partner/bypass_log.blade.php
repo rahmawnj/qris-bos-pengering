@@ -9,7 +9,7 @@
 @push('styles')
     {{-- Diperlukan untuk Date Range Picker --}}
     <link rel="stylesheet" type="text/css"
-        href="{{ asset('assets/plugins/bootstrap-daterangepicker/daterangepicker.css') }}" />
+        href="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.css" />
 
     {{-- Custom CSS untuk tampilan yang lebih rapi --}}
     <style>
@@ -259,28 +259,57 @@
 
 @push('scripts')
     {{-- Moment.js is usually already in vendor.min.js or app.min.js --}}
-    <script type="text/javascript" src="{{ asset('assets/plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/daterangepicker/daterangepicker.min.js"></script>
 
     <script>
         $(function() {
             // Inisialisasi Date Range Picker
-            $('#filter-daterange').daterangepicker({
-                opens: 'left', // Posisi calendar
-                autoUpdateInput: false, // Jangan update input otomatis
-                locale: {
-                    format: 'DD/MM/YYYY', // Format tampilan di input
-                    cancelLabel: 'Clear',
-                    applyLabel: 'Apply',
-                    daysOfWeek: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
-                    monthNames: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
-                        'September', 'Oktober', 'November', 'Desember'
-                    ],
-                    firstDay: 1
+            var $dateRange = $('#filter-daterange');
+
+            if ($dateRange.length && typeof $.fn.daterangepicker === 'function' && typeof moment === 'function') {
+                $dateRange.daterangepicker({
+                    opens: 'left',
+                    timePicker: false,
+                    showDropdowns: true,
+                    autoUpdateInput: false,
+                    locale: {
+                        format: 'DD/MM/YYYY',
+                        separator: ' - ',
+                        cancelLabel: 'Clear',
+                        applyLabel: 'Terapkan',
+                        daysOfWeek: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                        monthNames: ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus',
+                            'September', 'Oktober', 'November', 'Desember'
+                        ],
+                        firstDay: 1
+                    },
+                    ranges: {
+                        'Hari Ini': [moment(), moment()],
+                        'Kemarin': [moment().subtract(1, 'days'), moment().subtract(1, 'days')],
+                        '7 Hari Terakhir': [moment().subtract(6, 'days'), moment()],
+                        '30 Hari Terakhir': [moment().subtract(29, 'days'), moment()],
+                        'Bulan Ini': [moment().startOf('month'), moment().endOf('month')],
+                        'Bulan Lalu': [moment().subtract(1, 'month').startOf('month'), moment().subtract(1, 'month').endOf('month')]
+                    }
+                });
+
+                $dateRange.on('apply.daterangepicker', function(ev, picker) {
+                    $(this).val(picker.startDate.format('DD/MM/YYYY') + ' - ' + picker.endDate.format('DD/MM/YYYY'));
+                });
+
+                $dateRange.on('cancel.daterangepicker', function() {
+                    $(this).val('');
+                });
+
+                var initialDateRange = @json(request('daterange', ''));
+                if (initialDateRange) {
+                    $dateRange.val(initialDateRange);
+                } else {
+                    $dateRange.val('');
                 }
-            }, function(start, end, label) {
-                // Ketika tanggal dipilih, update nilai input
-                $('#filter-daterange').val(start.format('DD/MM/YYYY') + ' - ' + end.format('DD/MM/YYYY'));
-            });
+            } else {
+                console.error('Date range picker belum siap. Pastikan jQuery, Moment.js, dan daterangepicker termuat.');
+            }
 
             // Handle tombol "Clear" pada Date Range Picker
             $('#filter-daterange').on('cancel.daterangepicker', function(ev, picker) {
