@@ -115,9 +115,17 @@
                 $remainingDays = $billingOutlet->billing_remaining_days;
                 $alertClass = $alertType === 'warning' ? 'alert-warning' : 'alert-danger';
                 $billingUrl = route('partner.qris-billing.show', $billingOutlet->id);
+                $alertStorageKey = 'qris-billing-alert-' . $billingOutlet->id;
             @endphp
-            <div class="alert {{ $alertClass }} d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3" role="alert">
-                <div>
+            <div class="alert {{ $alertClass }} mb-3 qris-billing-alert"
+                data-outlet-id="{{ $billingOutlet->id }}"
+                data-storage-key="{{ $alertStorageKey }}"
+                role="alert" style="position: relative; padding-right: 48px;">
+                <button type="button" class="btn-close qris-billing-alert-close"
+                    aria-label="Tutup notifikasi" title="Tutup"
+                    style="position:absolute; top:12px; right:12px;"></button>
+
+                <div class="pe-2">
                     <strong>{{ $billingOutlet->outlet_name }} — Masa Aktif QRIS</strong><br>
                     @if ($alertType === 'expired')
                         Masa aktif outlet sudah habis atau belum ditentukan. Silakan lakukan perpanjangan masa aktif sekarang.
@@ -126,16 +134,18 @@
                         ({{ $billingOutlet->qris_billing_due_date->translatedFormat('d F Y') }}).
                     @endif
                 </div>
-                @if ($alertType === 'warning')
-                    <button type="button" class="btn btn-warning btn-sm"
-                        onclick="this.closest('.alert').remove()">
-                        Mengerti
-                    </button>
-                @else
-                    <a href="{{ $billingUrl }}" class="btn btn-danger btn-sm">
-                        Perpanjang Masa Aktif
-                    </a>
-                @endif
+
+                <div class="mt-3">
+                    @if ($alertType === 'warning')
+                        <button type="button" class="btn btn-warning btn-sm qris-billing-alert-dismiss">
+                            Mengerti
+                        </button>
+                    @else
+                        <a href="{{ $billingUrl }}" class="btn btn-danger btn-sm">
+                            Perpanjang Masa Aktif
+                        </a>
+                    @endif
+                </div>
             </div>
         @endforeach
     @endif
@@ -443,6 +453,51 @@
 @endsection
 
 @push('scripts')
+    <script>
+        (function () {
+            function localDateKey() {
+                const now = new Date();
+                return now.getFullYear() + '-' +
+                    String(now.getMonth() + 1).padStart(2, '0') + '-' +
+                    String(now.getDate()).padStart(2, '0');
+            }
+
+            function initQrisBillingAlerts() {
+                document.querySelectorAll('.qris-billing-alert').forEach(function (alert) {
+                    const storageKey = alert.dataset.storageKey;
+                    const today = localDateKey();
+
+                    try {
+                        if (storageKey && localStorage.getItem(storageKey) === today) {
+                            alert.remove();
+                            return;
+                        }
+                    } catch (error) {
+                        // Tetap izinkan alert tampil jika localStorage diblokir browser.
+                    }
+
+                    function dismissForToday() {
+                        try {
+                            if (storageKey) localStorage.setItem(storageKey, today);
+                        } catch (error) {
+                            // Penutupan tetap bekerja meskipun localStorage tidak tersedia.
+                        }
+                        alert.remove();
+                    }
+
+                    alert.querySelector('.qris-billing-alert-close')?.addEventListener('click', dismissForToday);
+                    alert.querySelector('.qris-billing-alert-dismiss')?.addEventListener('click', dismissForToday);
+                });
+            }
+
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', initQrisBillingAlerts);
+            } else {
+                initQrisBillingAlerts();
+            }
+        })();
+    </script>
+
     <script type="text/javascript" src="/assets/plugins/moment/min/moment.min.js"></script>
     <script type="text/javascript" src="/assets/plugins/bootstrap-daterangepicker/daterangepicker.js">
     </script>
