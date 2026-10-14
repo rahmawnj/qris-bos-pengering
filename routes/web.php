@@ -184,6 +184,7 @@ Route::get('export/qris-transactions', [ExportController::class, 'qrisTransactio
         Route::get('qris-billing/report', [PartnerQrisBillingController::class, 'report'])->name('qris-billing.report');
         Route::get('qris-billing/payment/{payment}', [PartnerQrisBillingController::class, 'showPayment'])->name('qris-billing.payment.show');
         Route::get('qris-billing/{outlet}/upload', [PartnerQrisBillingController::class, 'upload'])->name('qris-billing.upload');
+        Route::post('qris-billing/{outlet}/virtual-account', [PartnerQrisBillingController::class, 'createVirtualAccount'])->name('qris-billing.virtual-account');
         Route::get('qris-billing/{outlet}', [PartnerQrisBillingController::class, 'show'])->name('qris-billing.show');
         Route::post('outlets', [PartnerOutletController::class, 'store'])->name('outlets.store'); // Rute BARU untuk menyimpan outlet
         Route::patch('outlets/{outlet}/service-list', [PartnerOutletController::class, 'serviceType'])->name('outlets.services.update');
