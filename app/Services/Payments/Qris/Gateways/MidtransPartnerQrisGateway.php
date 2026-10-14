@@ -35,7 +35,7 @@ class MidtransPartnerQrisGateway implements QrisGateway
             // Midtrans Partner supports custom fields for metadata tracking
             'custom_field1' => (string) ($metadata['device_code'] ?? ''),
             'custom_field2' => (string) ($metadata['service_type'] ?? ''),
-            'custom_field3' => (string) ($metadata['outlet_code'] ?? ''),
+            'custom_field3' => (string) ($metadata['outlet_name'] ?? $metadata['outlet_code'] ?? ''),
         ];
 
         $response = Http::withHeaders([
@@ -92,7 +92,7 @@ class MidtransPartnerQrisGateway implements QrisGateway
             'metadata' => [
                 'device_code' => (string) data_get($payload, 'custom_field1', ''),
                 'service_type' => (string) data_get($payload, 'custom_field2', ''),
-                'outlet_code' => (string) data_get($payload, 'custom_field3', ''),
+                'outlet_name' => (string) data_get($payload, 'custom_field3', ''),
             ],
             'raw' => $payload,
         ];
