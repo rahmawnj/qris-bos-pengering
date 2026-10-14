@@ -4,6 +4,7 @@ namespace App\Http\Controllers\API;
 
 use App\Http\Controllers\Controller;
 use App\Models\Transaction;
+use App\Models\QrisBillingPayment;
 use App\Services\Payments\Qris\QrisGatewayManager;
 use App\Services\Payments\Qris\QrisTransactionFinalizer;
 use Illuminate\Http\Request;
@@ -24,12 +25,19 @@ class QrisWebhookController extends Controller
 
     public function midtrans(Request $request)
     {
+        if (QrisBillingPayment::where('gateway_order_id', $request->input('order_id'))->exists()) {
+            return app(QrisBillingWebhookController::class)->midtrans($request);
+        }
+
         return $this->handle($request, 'midtrans');
     }
 
     public function auto(Request $request)
     {
-    
+        if (QrisBillingPayment::where('gateway_order_id', $request->input('order_id'))->exists()) {
+            return app(QrisBillingWebhookController::class)->midtrans($request);
+        }
+
         $provider = $this->resolveProviderFromPayload($request);
 
         if (! $provider) {
