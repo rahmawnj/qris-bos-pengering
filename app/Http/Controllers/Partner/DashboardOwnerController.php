@@ -33,10 +33,13 @@ class DashboardOwnerController extends Controller
             // jadi kita bisa menginisialisasi semua variabel yang akan dilewatkan ke view
             // dengan nilai default atau kosong dan langsung return.
             // Ini untuk mencegah error jika outletIds kosong dan digunakan dalam query.
+            $qrisBillingOutlets = collect();
+
             return view('partner.dashboard', compact(
                 'startDate',
                 'endDate' // Pass relevant filter dates if applicable
             ))->with([
+                'qrisBillingOutlets' => $qrisBillingOutlets,
                 'categories' => [],
                 'seriesData' => [],
                 'donutLabels' => [],
@@ -289,7 +292,26 @@ class DashboardOwnerController extends Controller
         $dataMultiDeviceChart = $this->dataMultiDeviceChart($startDate, $endDate, $selectedDeviceCodes);
         $trendDeviceDonut = $this->trendDeviceDonut($startDate, $endDate, $selectedDeviceCodes);
 
+        $qrisBillingOutletsQuery = Outlet::query()->where('qris_billing_enabled', true);
+        if (Auth::user()?->role === 'owner') {
+            $owner = getBrand();
+            if ($owner) {
+                $qrisBillingOutletsQuery->where('owner_id', $owner->id);
+            } else {
+                $qrisBillingOutletsQuery->whereRaw('1 = 0');
+            }
+        } elseif (Auth::user()?->role === 'cashier') {
+            $cashierOutletId = Auth::user()?->cashier?->outlet_id;
+            $qrisBillingOutletsQuery->where('id', $cashierOutletId ?? 0);
+        } elseif (Auth::user()?->role === 'outlet') {
+            $qrisBillingOutletsQuery->where('id', Auth::id());
+        } else {
+            $qrisBillingOutletsQuery->whereRaw('1 = 0');
+        }
+        $qrisBillingOutlets = $qrisBillingOutletsQuery->orderBy('outlet_name')->get();
+
         return view('partner.dashboard', compact(
+            'qrisBillingOutlets',
             'daterangeFilter',
             'categories',
             'seriesData',
