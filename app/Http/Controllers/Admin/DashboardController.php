@@ -87,11 +87,13 @@ class DashboardController extends Controller
                     if (!$dueDate || $remainingDays < 0) {
                         $outlet->billing_alert_type = 'expired';
                         $outlet->billing_remaining_days = null;
-                    } elseif ($remainingDays <= 5) {
-                        $outlet->billing_alert_type = 'urgent';
-                        $outlet->billing_remaining_days = $remainingDays;
-                    } elseif ($remainingDays <= 7) {
+                    } elseif ($remainingDays >= 6 && $remainingDays <= 7) {
+                        // H-7 dan H-6: peringatan kuning.
                         $outlet->billing_alert_type = 'warning';
+                        $outlet->billing_remaining_days = $remainingDays;
+                    } elseif ($remainingDays >= 0 && $remainingDays <= 5) {
+                        // H-5 sampai hari H: peringatan merah.
+                        $outlet->billing_alert_type = 'urgent';
                         $outlet->billing_remaining_days = $remainingDays;
                     } else {
                         $outlet->billing_alert_type = null;
