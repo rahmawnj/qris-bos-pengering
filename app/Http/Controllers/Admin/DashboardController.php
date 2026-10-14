@@ -66,6 +66,42 @@ class DashboardController extends Controller
         }
 
         $allowedOutletIds = getData()->getOutletIds();
+
+        // Partner memakai dashboard bersama; alert billing hanya tampil untuk role partner.
+        $qrisBillingOutlets = collect();
+        $isPartnerDashboard = !Auth::guard('admin_config')->check()
+            && Auth::check()
+            && in_array(Auth::user()->role ?? null, ['owner', 'outlet', 'cashier'], true);
+
+        if ($isPartnerDashboard && !empty($allowedOutletIds)) {
+            $today = Carbon::today();
+            $qrisBillingOutlets = Outlet::query()
+                ->whereIn('id', $allowedOutletIds)
+                ->where('qris_billing_enabled', true)
+                ->get(['id', 'outlet_name', 'qris_billing_due_date', 'timezone'])
+                ->map(function ($outlet) use ($today) {
+                    $dueDate = $outlet->qris_billing_due_date;
+                    $remainingDays = $dueDate ? $today->diffInDays($dueDate, false) : null;
+
+                    if (!$dueDate || $remainingDays < 0) {
+                        $outlet->billing_alert_type = 'expired';
+                        $outlet->billing_remaining_days = null;
+                    } elseif ($remainingDays <= 5) {
+                        $outlet->billing_alert_type = 'urgent';
+                        $outlet->billing_remaining_days = $remainingDays;
+                    } elseif ($remainingDays <= 7) {
+                        $outlet->billing_alert_type = 'warning';
+                        $outlet->billing_remaining_days = $remainingDays;
+                    } else {
+                        $outlet->billing_alert_type = null;
+                        $outlet->billing_remaining_days = $remainingDays;
+                    }
+
+                    return $outlet;
+                })
+                ->filter(fn ($outlet) => $outlet->billing_alert_type !== null)
+                ->values();
+        }
         $selectedBrandIds = array_map('intval', (array) $request->input('brands', []));
         $selectedOutletIds = array_map('intval', (array) $request->input('outlets', []));
         $selectedDeviceRank = $request->input('device_rank') === 'bottom' ? 'bottom' : 'top';
@@ -105,6 +141,7 @@ class DashboardController extends Controller
         if (empty($outletIds)) {
             Log::warning('Dashboard: No outlets found for current user. Returning empty data.');
             return view('admin.dashboard', compact(
+                'qrisBillingOutlets',
                 'startDate',
                 'endDate',
                 'daterangeFilter',
@@ -371,6 +408,7 @@ class DashboardController extends Controller
         $defaultRangeLabel = $defaultRangeLabel ?? null;
 
         return view('admin.dashboard', compact(
+            'qrisBillingOutlets',
             'totalMembers',
             'totalDevices',
             'daterangeFilter',
