@@ -108,6 +108,31 @@
         $transactionsLink = $isAdminContext ? route('admin.transactions.index') : route('partner.transactions.index');
     @endphp
 
+    @if (!$isAdminContext && isset($qrisBillingOutlets) && $qrisBillingOutlets->isNotEmpty())
+        @foreach ($qrisBillingOutlets as $billingOutlet)
+            @php
+                $alertType = $billingOutlet->billing_alert_type;
+                $remainingDays = $billingOutlet->billing_remaining_days;
+                $alertClass = $alertType === 'warning' ? 'alert-warning' : 'alert-danger';
+                $billingUrl = route('partner.qris-billing.show', $billingOutlet->id);
+            @endphp
+            <div class="alert {{ $alertClass }} d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3" role="alert">
+                <div>
+                    <strong>{{ $billingOutlet->outlet_name }} — Masa Aktif QRIS</strong><br>
+                    @if ($alertType === 'expired')
+                        Masa aktif outlet sudah habis atau belum ditentukan. Silakan lakukan perpanjangan masa aktif sekarang.
+                    @else
+                        Masa aktif outlet akan berakhir dalam {{ $remainingDays }} hari
+                        ({{ $billingOutlet->qris_billing_due_date->translatedFormat('d F Y') }}).
+                    @endif
+                </div>
+                <a href="{{ $billingUrl }}" class="btn {{ $alertType === 'warning' ? 'btn-warning' : 'btn-danger' }} btn-sm">
+                    {{ $alertType === 'warning' ? 'Mengerti' : 'Perpanjang Masa Aktif' }}
+                </a>
+            </div>
+        @endforeach
+    @endif
+
     <div class="stat-grid mb-4" style="margin-top: 24px;">
         <div class="stat-card stat-orange">
             <div class="stat-title">Omzet</div>
