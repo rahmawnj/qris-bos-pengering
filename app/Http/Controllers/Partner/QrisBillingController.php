@@ -113,7 +113,7 @@ class QrisBillingController extends Controller
                 ?? $validated['va_bank'];
 
             if (!$vaNumber) {
-                throw new \\RuntimeException(
+                throw new \RuntimeException(
                     'Gateway tidak mengembalikan nomor Virtual Account. HTTP '
                     . $response->status()
                     . '; response keys: '
