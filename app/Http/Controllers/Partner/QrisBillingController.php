@@ -103,6 +103,18 @@ class QrisBillingController extends Controller
                 'response' => $result ?? $response->body(),
             ]);
 
+            // Midtrans dapat mengirim HTTP 200 meskipun transaksi ditolak.
+            // Periksa status_code di body sebelum menganggap charge berhasil.
+            $gatewayStatusCode = (string) data_get($result, 'status_code', '');
+            if ($gatewayStatusCode !== '' && $gatewayStatusCode !== '201') {
+                throw new \\RuntimeException(
+                    'Midtrans menolak pembuatan VA. status_code: '
+                    . $gatewayStatusCode
+                    . '; status_message: '
+                    . (data_get($result, 'status_message') ?? 'tidak tersedia')
+                );
+            }
+
             // Format respons VA dapat berbeda antarbank.
             $vaNumber = data_get($result, 'va_numbers.0.va_number')
                 ?? data_get($result, 'permata_va_number')
@@ -138,7 +150,10 @@ class QrisBillingController extends Controller
                 'payment_id' => $payment->id,
                 'error' => $e->getMessage(),
             ]);
-            return back()->with('error', 'Virtual Account gagal dibuat. Silakan coba lagi atau gunakan upload bukti transfer.');
+            $userMessage = str_contains($e->getMessage(), 'Payment channel is not activated')
+                ? 'Kanal Virtual Account bank ini belum aktif di akun Midtrans untuk environment yang digunakan. Aktifkan kanal pembayaran di dashboard Midtrans atau pilih bank yang sudah aktif.'
+                : 'Virtual Account gagal dibuat. Periksa log aplikasi untuk detailnya, atau gunakan upload bukti transfer.';
+            return back()->with('error', $userMessage);
         }
 
         return redirect()->route('partner.qris-billing.show', $outlet)
