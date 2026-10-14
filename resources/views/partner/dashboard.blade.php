@@ -127,7 +127,54 @@
     </div>
 </div>
 
-    <div class="row">
+@if (isset($qrisBillingOutlets) && $qrisBillingOutlets->isNotEmpty())
+    <div class="mb-4">
+        @foreach ($qrisBillingOutlets as $qrisOutlet)
+            @php
+                $qrisActiveUntil = $qrisOutlet->qris_billing_due_date;
+                $qrisRemainingDays = $qrisActiveUntil
+                    ? now()->startOfDay()->diffInDays($qrisActiveUntil->copy()->startOfDay(), false)
+                    : null;
+                $qrisAlertType = !$qrisActiveUntil || $qrisRemainingDays < 0
+                    ? 'expired'
+                    : ($qrisRemainingDays <= 5 ? 'urgent' : ($qrisRemainingDays <= 7 ? 'warning' : null));
+                $qrisTimezoneLabel = in_array($qrisOutlet->timezone, ['WIB', 'WITA', 'WIT'], true)
+                    ? $qrisOutlet->timezone
+                    : 'WIB';
+            @endphp
+
+            @if ($qrisAlertType === 'warning')
+                <div class="alert alert-warning d-flex flex-column gap-2 mb-3" role="alert">
+                    <strong>Perhatian — {{ $qrisOutlet->outlet_name }}</strong>
+                    <div>Masa aktif outlet Anda akan berakhir dalam <strong>{{ $qrisRemainingDays }} Hari</strong>.</div>
+                    <div>Outlet Anda aktif hingga <strong>{{ $qrisActiveUntil->copy()->locale('id')->translatedFormat('d F Y') }} - 23.00 {{ $qrisTimezoneLabel }}</strong>.</div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-warning btn-sm" data-bs-dismiss="alert">Mengerti</button>
+                    </div>
+                </div>
+            @elseif ($qrisAlertType === 'urgent')
+                <div class="alert alert-danger d-flex flex-column gap-2 mb-3" role="alert">
+                    <strong>Perhatian — {{ $qrisOutlet->outlet_name }}</strong>
+                    <div>Masa aktif outlet Anda akan berakhir dalam <strong>{{ $qrisRemainingDays }} Hari</strong>. Lakukan perpanjangan masa aktif sekarang!</div>
+                    <div>Outlet Anda aktif hingga <strong>{{ $qrisActiveUntil->copy()->locale('id')->translatedFormat('d F Y') }} - 23.00 {{ $qrisTimezoneLabel }}</strong>.</div>
+                    <div class="text-end">
+                        <a href="{{ route('partner.qris-billing.show', $qrisOutlet) }}" class="btn btn-danger btn-sm">Perpanjang Masa Aktif</a>
+                    </div>
+                </div>
+            @elseif ($qrisAlertType === 'expired')
+                <div class="alert alert-danger d-flex flex-column gap-2 mb-3" role="alert">
+                    <strong>Perhatian — {{ $qrisOutlet->outlet_name }}</strong>
+                    <div>Masa aktif outlet sudah habis, lakukan perpanjangan masa aktif sekarang!</div>
+                    <div class="text-end">
+                        <a href="{{ route('partner.qris-billing.show', $qrisOutlet) }}" class="btn btn-danger btn-sm">Perpanjang Masa Aktif</a>
+                    </div>
+                </div>
+            @endif
+        @endforeach
+    </div>
+@endif
+
+<div class="row">
         <div class="col-xl-8">
             <div class="widget-chart with-sidebar">
                 <div class="widget-chart-content bg-white">
