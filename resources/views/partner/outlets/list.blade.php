@@ -81,7 +81,7 @@
                                                 Masa aktif outlet Anda akan berakhir dalam <strong>{{ $qrisRemainingDays }} Hari</strong>.
                                             </div>
                                             <div>
-                                                Outlet Anda aktif hingga <strong>{{ $qrisActiveUntil->translatedFormat('d F Y') }} - 23.00 {{ $qrisTimezoneLabel }}</strong>.
+                                                Outlet Anda aktif hingga <strong>{{ $qrisActiveUntil->copy()->locale('id')->translatedFormat('d F Y') }} - 23.00 {{ $qrisTimezoneLabel }}</strong>.
                                             </div>
                                             <div class="text-end">
                                                 <button type="button" class="btn btn-warning btn-sm" data-bs-dismiss="alert">Mengerti</button>
@@ -94,7 +94,7 @@
                                                 Masa aktif outlet Anda akan berakhir dalam <strong>{{ $qrisRemainingDays }} Hari</strong>. Lakukan perpanjangan masa aktif sekarang!
                                             </div>
                                             <div>
-                                                Outlet Anda aktif hingga <strong>{{ $qrisActiveUntil->translatedFormat('d F Y') }} - 23.00 {{ $qrisTimezoneLabel }}</strong>.
+                                                Outlet Anda aktif hingga <strong>{{ $qrisActiveUntil->copy()->locale('id')->translatedFormat('d F Y') }} - 23.00 {{ $qrisTimezoneLabel }}</strong>.
                                             </div>
                                             <div class="text-end">
                                                 <a href="{{ route('partner.qris-billing.show', $outlet) }}" class="btn btn-danger btn-sm">Perpanjang Masa Aktif</a>
