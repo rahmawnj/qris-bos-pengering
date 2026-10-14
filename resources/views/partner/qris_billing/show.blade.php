@@ -14,8 +14,46 @@
 </div></div></div>
 <div class="col-md-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4">
 @if($outlet->billing_status==='paid')<div class="text-center py-5"><div class="text-success mb-3"><i class="fa fa-check-circle fa-5x"></i></div><h3>QRIS Aktif</h3><p class="text-muted">Terima kasih. Perpanjangan QRIS telah dikonfirmasi oleh administrator.</p>@if($outlet->billing_payment?->paid_at)<div class="badge bg-light text-dark p-2 border">Diaktifkan pada: {{ $outlet->billing_payment->paid_at->format('d/m/Y H:i') }}</div>@endif</div>
-@elseif($outlet->billing_status==='pending')<div class="text-center py-5"><div class="text-warning mb-3"><i class="fa fa-clock fa-5x"></i></div><h3>Menunggu Verifikasi</h3><p class="text-muted">Bukti pembayaran Anda sedang diproses oleh tim kami.</p>@if($outlet->billing_payment?->proof_of_payment)<div class="mt-4 text-start"><label class="fw-bold mb-2">Bukti yang telah diunggah:</label><a href="{{ asset('storage/'.$outlet->billing_payment->proof_of_payment) }}" target="_blank" class="d-block"><img src="{{ asset('storage/'.$outlet->billing_payment->proof_of_payment) }}" class="img-fluid rounded border" style="max-height:200px;"></a></div>@endif</div>
-@else<h5 class="fw-bold mb-3">Unggah Bukti Pembayaran</h5><p class="text-muted mb-4">Mohon pastikan gambar bukti transfer terlihat jelas agar proses verifikasi lebih cepat.</p><form action="{{ route('partner.outlets.billing.upload',$outlet) }}" method="POST" enctype="multipart/form-data">@csrf<div class="upload-zone p-5 text-center border-2 border-dashed rounded-4 mb-4 bg-light"><i class="fa fa-cloud-upload-alt fa-4x text-muted mb-3"></i><h6 class="mb-2">Klik untuk memilih gambar bukti transfer</h6><p class="text-muted small mb-3">Format: JPG, PNG (Maks 5MB)</p><input type="file" name="proof_of_payment" class="form-control" accept="image/*" required></div><button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm"><i class="fa fa-paper-plane me-1"></i> Kirim Konfirmasi Pembayaran</button></form>@endif
+@elseif($outlet->billing_status==='pending')
+    @if($outlet->billing_payment?->payment_method === 'virtual_account')
+        <div class="text-center py-4">
+            <div class="text-primary mb-3"><i class="fa fa-university fa-4x"></i></div>
+            <h3>Virtual Account Menunggu Pembayaran</h3>
+            <p class="text-muted">Selesaikan pembayaran melalui bank sebelum batas waktu berakhir.</p>
+            <div class="border rounded-3 p-4 text-start mt-3">
+                <div class="text-muted small">Bank</div><div class="fw-bold mb-3">{{ strtoupper($outlet->billing_payment->va_bank ?? '-') }}</div>
+                <div class="text-muted small">Nomor Virtual Account</div>
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="fw-bold fs-4 text-primary" id="qris-billing-va">{{ $outlet->billing_payment->va_number ?? '-' }}</div>
+                    <button type="button" class="btn btn-outline-primary btn-sm" onclick="navigator.clipboard.writeText(document.getElementById('qris-billing-va').innerText)">Salin</button>
+                </div>
+                <div class="text-muted small">Total pembayaran</div>
+                <div class="fw-bold fs-4 mb-2">Rp {{ number_format($outlet->billing_payment->amount,0,',','.') }}</div>
+                @if($outlet->billing_payment->expires_at)<div class="text-danger small">Batas pembayaran: {{ $outlet->billing_payment->expires_at->format('d/m/Y H:i') }}</div>@endif
+                <div class="small text-muted mt-3">Status akan diperbarui otomatis setelah gateway mengonfirmasi pembayaran.</div>
+            </div>
+        </div>
+    @else
+        <div class="text-center py-5"><div class="text-warning mb-3"><i class="fa fa-clock fa-5x"></i></div><h3>Menunggu Verifikasi</h3><p class="text-muted">Bukti pembayaran Anda sedang diproses oleh tim kami.</p>@if($outlet->billing_payment?->proof_of_payment)<div class="mt-4 text-start"><label class="fw-bold mb-2">Bukti yang telah diunggah:</label><a href="{{ asset('storage/'.$outlet->billing_payment->proof_of_payment) }}" target="_blank" class="d-block"><img src="{{ asset('storage/'.$outlet->billing_payment->proof_of_payment) }}" class="img-fluid rounded border" style="max-height:200px;"></a></div>@endif</div>
+    @endif
+@else
+    <h5 class="fw-bold mb-3">Pilih Metode Pembayaran</h5>
+    <div class="border rounded-3 p-3 mb-4">
+        <h6 class="fw-bold"><i class="fa fa-university me-1 text-primary"></i> Bayar dengan Virtual Account</h6>
+        <p class="text-muted small">Nomor VA dibuat otomatis dan status diperbarui setelah pembayaran terkonfirmasi.</p>
+        <form action="{{ route('partner.qris-billing.virtual-account', $outlet) }}" method="POST" class="mb-3">
+            @csrf
+            <label for="va_bank" class="form-label">Pilih Bank</label>
+            <select name="va_bank" id="va_bank" class="form-select mb-3" required>
+                <option value="bca">BCA</option><option value="bni">BNI</option><option value="bri">BRI</option>
+                <option value="permata">Permata</option><option value="cimb">CIMB Niaga</option><option value="danamon">Danamon</option>
+            </select>
+            <button type="submit" class="btn btn-success w-100"><i class="fa fa-credit-card me-1"></i> Buat Virtual Account</button>
+        </form>
+    </div>
+    <h6 class="fw-bold mb-2">Atau upload bukti transfer manual</h6>
+    <p class="text-muted mb-4">Pilih cara manual jika sudah transfer ke rekening yang tertera.</p>
+    <form action="{{ route('partner.outlets.billing.upload',$outlet) }}" method="POST" enctype="multipart/form-data">@csrf<div class="upload-zone p-5 text-center border-2 border-dashed rounded-4 mb-4 bg-light"><i class="fa fa-cloud-upload-alt fa-4x text-muted mb-3"></i><h6 class="mb-2">Klik untuk memilih gambar bukti transfer</h6><p class="text-muted small mb-3">Format: JPG, PNG (Maks 5MB)</p><input type="file" name="proof_of_payment" class="form-control" accept="image/*" required></div><button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm"><i class="fa fa-paper-plane me-1"></i> Kirim Konfirmasi Pembayaran</button></form>@endif
 </div></div></div></div>
 <div class="mt-4"><a href="{{ route('partner.qris-billing.report') }}" class="btn btn-default"><i class="fa fa-arrow-left me-1"></i> Kembali ke Laporan</a></div>
 @endsection
