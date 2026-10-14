@@ -19,7 +19,7 @@ class LoginController extends Controller
      */
     protected function authenticated(Request $request, $user)
     {
-        $request->session()->flash('reset_qris_billing_alerts', true);
+        $request->session()->put('reset_qris_billing_alerts', true);
     }
 
     public function __construct()
