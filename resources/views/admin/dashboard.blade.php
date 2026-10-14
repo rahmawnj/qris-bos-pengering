@@ -463,6 +463,20 @@
             }
 
             function initQrisBillingAlerts() {
+                // Login baru menghapus status dismiss sebelumnya agar alert tampil lagi.
+                const resetOnLogin = @json((bool) session('reset_qris_billing_alerts'));
+                if (resetOnLogin) {
+                    try {
+                        Object.keys(localStorage).forEach(function (key) {
+                            if (key.startsWith('qris-billing-alert-')) {
+                                localStorage.removeItem(key);
+                            }
+                        });
+                    } catch (error) {
+                        // Alert tetap diproses normal jika localStorage diblokir.
+                    }
+                }
+
                 document.querySelectorAll('.qris-billing-alert').forEach(function (alert) {
                     const storageKey = alert.dataset.storageKey;
                     const today = localDateKey();
