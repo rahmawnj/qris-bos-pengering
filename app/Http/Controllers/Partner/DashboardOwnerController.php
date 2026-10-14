@@ -294,11 +294,13 @@ class DashboardOwnerController extends Controller
 
         $qrisBillingOutletsQuery = Outlet::query()->where('qris_billing_enabled', true);
         if (Auth::user()?->role === 'owner') {
-            $owner = getBrand();
-            if ($owner) {
-                $qrisBillingOutletsQuery->where('owner_id', $owner->id);
+            // Gunakan daftar outlet yang sudah dihitung untuk owner aktif agar konsisten
+            // dengan cakupan data dashboard dan tidak bergantung pada getBrand() saja.
+            if (!empty($outletIds)) {
+                $qrisBillingOutletsQuery->whereIn('id', $outletIds);
             } else {
-                $qrisBillingOutletsQuery->whereRaw('1 = 0');
+                $owner = getBrand();
+                $qrisBillingOutletsQuery->where('owner_id', $owner?->id ?? 0);
             }
         } elseif (Auth::user()?->role === 'cashier') {
             $cashierOutletId = Auth::user()?->cashier?->outlet_id;
