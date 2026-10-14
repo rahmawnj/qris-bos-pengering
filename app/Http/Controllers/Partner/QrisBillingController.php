@@ -107,7 +107,7 @@ class QrisBillingController extends Controller
             // Periksa status_code di body sebelum menganggap charge berhasil.
             $gatewayStatusCode = (string) data_get($result, 'status_code', '');
             if ($gatewayStatusCode !== '' && $gatewayStatusCode !== '201') {
-                throw new \\RuntimeException(
+                throw new \RuntimeException(
                     'Midtrans menolak pembuatan VA. status_code: '
                     . $gatewayStatusCode
                     . '; status_message: '
