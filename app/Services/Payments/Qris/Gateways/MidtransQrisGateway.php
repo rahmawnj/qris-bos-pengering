@@ -38,7 +38,7 @@ class MidtransQrisGateway implements QrisGateway
         if ($metadata !== []) {
             $payload['custom_field1'] = (string) ($metadata['device_code'] ?? '');
             $payload['custom_field2'] = (string) ($metadata['service_type'] ?? '');
-            $payload['custom_field3'] = (string) ($metadata['outlet_code'] ?? '');
+            $payload['custom_field3'] = (string) ($metadata['outlet_name'] ?? $metadata['outlet_code'] ?? '');
         }
 
         $apiUrl = $this->baseUrl() . '/v2/charge';
@@ -99,7 +99,7 @@ class MidtransQrisGateway implements QrisGateway
             'metadata' => [
                 'device_code' => (string) data_get($payload, 'custom_field1', ''),
                 'service_type' => (string) data_get($payload, 'custom_field2', ''),
-                'outlet_code' => (string) data_get($payload, 'custom_field3', ''),
+                'outlet_name' => (string) data_get($payload, 'custom_field3', ''),
                 'issuer' => (string) data_get($payload, 'issuer', ''),
                 'acquirer' => (string) data_get($payload, 'acquirer', ''),
                 'payment_type' => (string) data_get($payload, 'payment_type', ''),
