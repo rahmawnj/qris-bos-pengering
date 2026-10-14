@@ -108,7 +108,7 @@
         $transactionsLink = $isAdminContext ? route('admin.transactions.index') : route('partner.transactions.index');
     @endphp
 
-    @if (!$isAdminContext && isset($qrisBillingOutlets) && $qrisBillingOutlets->isNotEmpty())
+    @if (request()->routeIs('partner.dashboard') && isset($qrisBillingOutlets) && $qrisBillingOutlets->isNotEmpty())
         @foreach ($qrisBillingOutlets as $billingOutlet)
             @php
                 $alertType = $billingOutlet->billing_alert_type;
