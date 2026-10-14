@@ -27,7 +27,7 @@ class QrisBillingController extends Controller
         }
 
         $validated = $request->validate([
-            'va_bank' => ['required', 'in:bca,bni,bri,permata,cimb,danamon'],
+            'va_bank' => ['required', 'in:bca,bni,bri,permata,cimb'],
         ]);
         $serverKey = (string) config('services.midtrans.server_key');
         if ($serverKey === '') {
@@ -44,8 +44,8 @@ class QrisBillingController extends Controller
             }
             return back()->with('error', 'Masih ada pembayaran yang menunggu verifikasi. Selesaikan atau tunggu pemeriksaan pembayaran sebelumnya.');
         }
-        if (empty($summary['periods'])) {
-            return back()->with('error', 'Pembayaran perpanjangan belum tersedia untuk outlet ini.');
+        if (empty($summary['periods']) || (int) ($summary['amount'] ?? 0) < 1) {
+            return back()->with('error', 'Pembayaran perpanjangan belum tersedia atau nominalnya tidak valid.');
         }
 
         $period = $summary['periods'][0];
