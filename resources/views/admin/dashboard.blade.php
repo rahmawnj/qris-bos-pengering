@@ -464,7 +464,7 @@
 
             function initQrisBillingAlerts() {
                 // Login baru menghapus status dismiss sebelumnya agar alert tampil lagi.
-                const resetOnLogin = @json((bool) session('reset_qris_billing_alerts'));
+                const resetOnLogin = @json((bool) session()->pull('reset_qris_billing_alerts', false));
                 if (resetOnLogin) {
                     try {
                         Object.keys(localStorage).forEach(function (key) {
