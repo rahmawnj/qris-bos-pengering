@@ -126,9 +126,16 @@
                         ({{ $billingOutlet->qris_billing_due_date->translatedFormat('d F Y') }}).
                     @endif
                 </div>
-                <a href="{{ $billingUrl }}" class="btn {{ $alertType === 'warning' ? 'btn-warning' : 'btn-danger' }} btn-sm">
-                    {{ $alertType === 'warning' ? 'Mengerti' : 'Perpanjang Masa Aktif' }}
-                </a>
+                @if ($alertType === 'warning')
+                    <button type="button" class="btn btn-warning btn-sm"
+                        onclick="this.closest('.alert').remove()">
+                        Mengerti
+                    </button>
+                @else
+                    <a href="{{ $billingUrl }}" class="btn btn-danger btn-sm">
+                        Perpanjang Masa Aktif
+                    </a>
+                @endif
             </div>
         @endforeach
     @endif
