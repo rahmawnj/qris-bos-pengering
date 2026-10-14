@@ -8,6 +8,8 @@ use App\Models\Outlet;
 use App\Models\QrisBillingPayment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Str;
 
 class QrisBillingController extends Controller
 {
@@ -16,6 +18,110 @@ class QrisBillingController extends Controller
     public function show(Request $request,Outlet $outlet){$this->authorizeOutlet($outlet);if(!$outlet->qris_billing_enabled)return redirect()->route('partner.qris-billing.report')->with('error','Outlet ini tidak memiliki fitur perpanjangan QRIS.');$outlet=$this->decorateOutlet($outlet,now()->format('Y-m'));$outlet->load(['devices']);$paymentInstruction=$this->paymentInstruction();return view('partner.qris_billing.show',compact('outlet','paymentInstruction'));}
     public function showPayment(Request $request,QrisBillingPayment $payment){abort_unless(in_array($payment->outlet_id,$this->accessibleOutletIds()),403,'Akses outlet ditolak.');$payment->loadMissing(['outlet.devices']);$outlet=$this->outletFromBillingPayment($payment);abort_unless($outlet,404,'Data perpanjangan tidak ditemukan.');$paymentInstruction=$this->paymentInstruction();return view('partner.qris_billing.show',compact('outlet','paymentInstruction'));}
     public function upload(Request $request,Outlet $outlet){$this->authorizeOutlet($outlet);if(!$outlet->qris_billing_enabled)return redirect()->route('partner.qris-billing.report')->with('error','Outlet ini tidak memiliki fitur perpanjangan QRIS.');$outlet=$this->decorateOutlet($outlet,now()->format('Y-m'));$outlet->load(['devices']);$period=$outlet->billing_action_period??now()->format('Y-m');$paymentInstruction=$this->paymentInstruction();return view('partner.qris_billing.upload',compact('outlet','period','paymentInstruction'));}
+
+    public function createVirtualAccount(Request $request, Outlet $outlet)
+    {
+        $this->authorizeOutlet($outlet);
+        if (!$outlet->qris_billing_enabled) {
+            return back()->with('error', 'Outlet ini tidak memiliki fitur perpanjangan QRIS.');
+        }
+
+        $validated = $request->validate([
+            'va_bank' => ['required', 'in:bca,bni,bri,permata,cimb,danamon'],
+        ]);
+        $serverKey = (string) config('services.midtrans.server_key');
+        if ($serverKey === '') {
+            return back()->with('error', 'Konfigurasi MIDTRANS_SERVER_KEY belum tersedia.');
+        }
+
+        $outlet->loadMissing(['devices', 'qrisBillingPayments']);
+        $summary = $outlet->qrisBillingUnpaidSummary();
+        if (($summary['pending_count'] ?? 0) > 0) {
+            $pending = $outlet->latestQrisBillingPayment('pending');
+            if ($pending && $pending->payment_method === 'virtual_account' && $pending->va_number) {
+                return redirect()->route('partner.qris-billing.show', $outlet)
+                    ->with('success', 'Virtual Account yang masih aktif sudah tersedia.');
+            }
+            return back()->with('error', 'Masih ada pembayaran yang menunggu verifikasi. Selesaikan atau tunggu pemeriksaan pembayaran sebelumnya.');
+        }
+        if (empty($summary['periods'])) {
+            return back()->with('error', 'Pembayaran perpanjangan belum tersedia untuk outlet ini.');
+        }
+
+        $period = $summary['periods'][0];
+        $startDate = $period['status'] === 'prepay'
+            ? $outlet->qris_billing_due_date->copy()->startOfDay()
+            : now()->copy()->startOfDay();
+        $endDate = $startDate->copy()->addMonthNoOverflow()->startOfDay();
+        $orderId = 'QBP-' . $outlet->id . '-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(5));
+
+        $payment = QrisBillingPayment::create([
+            'outlet_id' => $outlet->id,
+            'period_start' => $startDate->toDateString(),
+            'period_end' => $endDate->toDateString(),
+            'amount' => (int) $summary['amount'],
+            'status' => 'pending',
+            'payment_method' => 'virtual_account',
+            'payment_provider' => 'midtrans',
+            'gateway_order_id' => $orderId,
+            'va_bank' => $validated['va_bank'],
+        ]);
+
+        try {
+            $baseUrl = config('services.midtrans.environment') === 'production'
+                ? 'https://api.midtrans.com'
+                : 'https://api.sandbox.midtrans.com';
+            $payload = [
+                'payment_type' => 'bank_transfer',
+                'transaction_details' => [
+                    'order_id' => $orderId,
+                    'gross_amount' => (int) $payment->amount,
+                ],
+                'bank_transfer' => ['bank' => $validated['va_bank']],
+                'customer_details' => [
+                    'first_name' => mb_substr((string) $outlet->outlet_name, 0, 50),
+                ],
+            ];
+            $response = Http::withBasicAuth($serverKey, '')
+                ->acceptJson()
+                ->asJson()
+                ->timeout(20)
+                ->post($baseUrl . '/v2/charge', $payload);
+
+            if (!$response->successful()) {
+                throw new \RuntimeException('Gateway menolak permintaan Virtual Account: ' . ($response->json('status_message') ?? $response->body()));
+            }
+
+            $result = $response->json();
+            $vaNumber = data_get($result, 'va_numbers.0.va_number')
+                ?? data_get($result, 'permata_va_number');
+            $bankName = data_get($result, 'va_numbers.0.bank') ?? $validated['va_bank'];
+            if (!$vaNumber) {
+                throw new \RuntimeException('Gateway tidak mengembalikan nomor Virtual Account.');
+            }
+
+            $payment->update([
+                'va_bank' => $bankName,
+                'va_number' => (string) $vaNumber,
+                'gateway_transaction_id' => data_get($result, 'transaction_id'),
+                'expires_at' => data_get($result, 'expiry_time')
+                    ? \Carbon\Carbon::parse(data_get($result, 'expiry_time'))
+                    : now()->addDay(),
+            ]);
+        } catch (\Throwable $e) {
+            $payment->update(['status' => 'failed']);
+            \Illuminate\Support\Facades\Log::error('QRIS billing VA creation failed.', [
+                'outlet_id' => $outlet->id,
+                'payment_id' => $payment->id,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Virtual Account gagal dibuat. Silakan coba lagi atau gunakan upload bukti transfer.');
+        }
+
+        return redirect()->route('partner.qris-billing.show', $outlet)
+            ->with('success', 'Virtual Account berhasil dibuat. Bayar sebelum masa berlaku berakhir.');
+    }
+
     private function paymentInstruction():array{return ['bank_name'=>Setting::getValue('qris_billing_payment_bank_name','Bank BCA'),'account_number'=>Setting::getValue('qris_billing_payment_account_number','8290-xxxx-xxxx'),'account_holder'=>Setting::getValue('qris_billing_payment_account_holder','Bos Pengering')];}
     private function authorizeOutlet(Outlet $outlet):void{$outletIds=$this->accessibleOutletIds();if(empty($outletIds)&&\Illuminate\Support\Facades\Auth::guard('outlet')->check())$outletIds=[\Illuminate\Support\Facades\Auth::guard('outlet')->id()];abort_unless(in_array($outlet->id,$outletIds),403,'Akses outlet ditolak.');}
     private function accessibleOutletIds():array{$outletIds=getData()->getOutletIds();if(empty($outletIds)&&\Illuminate\Support\Facades\Auth::guard('outlet')->check())$outletIds=[\Illuminate\Support\Facades\Auth::guard('outlet')->id()];return $outletIds;}
