@@ -14,12 +14,20 @@ class QrisBillingPayment extends Model
         'status',
         'paid_at',
         'proof_of_payment',
+        'payment_method',
+        'payment_provider',
+        'gateway_order_id',
+        'va_bank',
+        'va_number',
+        'expires_at',
+        'gateway_transaction_id',
     ];
 
     protected $casts = [
         'period_start' => 'date',
         'period_end' => 'date',
         'paid_at' => 'datetime',
+        'expires_at' => 'datetime',
     ];
 
     public function outlet()
