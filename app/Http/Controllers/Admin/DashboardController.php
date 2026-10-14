@@ -69,9 +69,10 @@ class DashboardController extends Controller
 
         // Partner memakai dashboard bersama; alert billing hanya tampil untuk role partner.
         $qrisBillingOutlets = collect();
-        $isPartnerDashboard = !Auth::guard('admin_config')->check()
-            && Auth::check()
-            && in_array(Auth::user()->role ?? null, ['owner', 'outlet', 'cashier'], true);
+        $isPartnerDashboard = request()->routeIs('partner.dashboard')
+            || (!Auth::guard('admin_config')->check()
+                && Auth::check()
+                && in_array(Auth::user()->role ?? null, ['owner', 'outlet', 'cashier'], true));
 
         if ($isPartnerDashboard && !empty($allowedOutletIds)) {
             $today = Carbon::today();
