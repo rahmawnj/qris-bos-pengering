@@ -46,7 +46,7 @@
             <label for="va_bank" class="form-label">Pilih Bank</label>
             <select name="va_bank" id="va_bank" class="form-select mb-3" required>
                 <option value="bca">BCA</option><option value="bni">BNI</option><option value="bri">BRI</option>
-                <option value="permata">Permata</option><option value="cimb">CIMB Niaga</option><option value="danamon">Danamon</option>
+                <option value="permata">Permata</option><option value="cimb">CIMB Niaga</option>
             </select>
             <button type="submit" class="btn btn-success w-100"><i class="fa fa-credit-card me-1"></i> Buat Virtual Account</button>
         </form>
