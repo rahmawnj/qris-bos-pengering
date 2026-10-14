@@ -109,6 +109,7 @@ class QrisController extends Controller
                     'device_code' => $deviceCode,
                     'service_type' => $type,
                     'outlet_code' => $outlet->code,
+                    'outlet_name' => $outlet->outlet_name ?? $outlet->code,
                     'customer_name' => $outlet->owner->brand_name ?? 'Pelanggan',
                     'customer_email' => $outlet->owner->user->email ?? 'pelanggan@bospengering.com',
                 ], $additionalMetadata),
