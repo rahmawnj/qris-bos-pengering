@@ -93,11 +93,34 @@ class QrisBillingController extends Controller
             }
 
             $result = $response->json();
+
+            // Catat respons gateway agar format VA yang tidak terduga bisa ditelusuri.
+            // Jangan log Server Key atau request Authorization.
+            \\Illuminate\\Support\\Facades\\Log::info('QRIS billing Midtrans VA response.', [
+                'outlet_id' => $outlet->id,
+                'payment_id' => $payment->id,
+                'http_status' => $response->status(),
+                'response' => $result ?? $response->body(),
+            ]);
+
+            // Format respons VA dapat berbeda antarbank.
             $vaNumber = data_get($result, 'va_numbers.0.va_number')
-                ?? data_get($result, 'permata_va_number');
-            $bankName = data_get($result, 'va_numbers.0.bank') ?? $validated['va_bank'];
+                ?? data_get($result, 'permata_va_number')
+                ?? data_get($result, 'va_number')
+                ?? data_get($result, 'bill_key');
+            $bankName = data_get($result, 'va_numbers.0.bank')
+                ?? data_get($result, 'bank')
+                ?? $validated['va_bank'];
+
             if (!$vaNumber) {
-                throw new \RuntimeException('Gateway tidak mengembalikan nomor Virtual Account.');
+                throw new \\RuntimeException(
+                    'Gateway tidak mengembalikan nomor Virtual Account. HTTP '
+                    . $response->status()
+                    . '; response keys: '
+                    . implode(', ', array_keys(is_array($result) ? $result : []))
+                    . '; status_message: '
+                    . (data_get($result, 'status_message') ?? 'tidak tersedia')
+                );
             }
 
             $payment->update([
