@@ -10,6 +10,7 @@ use App\Http\Controllers\API\DeviceController as APIDeviceController;
 use App\Http\Controllers\API\MidtransPartnerQrisController;
 use App\Http\Controllers\API\QrisController;
 use App\Http\Controllers\API\QrisWebhookController;
+use App\Http\Controllers\API\QrisBillingWebhookController;
 use App\Http\Controllers\Partner\TopupController;
 /*
 |--------------------------------------------------------------------------
@@ -40,6 +41,7 @@ Route::get('midtrans-partner/qris/test', [MidtransPartnerQrisController::class, 
 Route::get('midtrans-partner/qris/debug', [MidtransPartnerQrisController::class, 'debug']);
 Route::get('payment-check', [QrisController::class, 'checkPaymentStatus']);
 Route::get('payment-check-2', [QrisController::class, 'checkPaymentStatus2']);
+Route::post('qris-billing/midtrans-callback', [QrisBillingWebhookController::class, 'midtrans'])->name('qris-billing.midtrans-callback');
 Route::post('payment-status-update', [QrisWebhookController::class, 'auto'])->name('payment-callback');
 Route::post('payment-status-update/xendit', [QrisWebhookController::class, 'xendit'])->name('xendit.payment-callback');
 Route::post('payment-status-update/midtrans', [QrisWebhookController::class, 'midtrans'])->name('midtrans.payment-callback');
