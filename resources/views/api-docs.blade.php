@@ -131,6 +131,24 @@
                             loading: false,
                             result: null,
                         },
+                        'virtual-account-callback-test': {
+                            title: 'Simulasi Callback Virtual Account Midtrans',
+                            method: 'POST',
+                            url: apiUrl('/api-docs/test-virtual-account-callback'),
+                            params: [],
+                            confirmBeforeSubmit: 'Callback settlement/capture dapat mengubah pembayaran yang cocok menjadi PAID dan memperbarui masa aktif outlet. Pastikan order_id dan status sudah benar. Lanjutkan?',
+                            body: JSON.stringify({
+                                order_id: 'QBP-38-261027165345-EW7AY',
+                                transaction_status: 'expire',
+                                gross_amount: '150000.00',
+                                transaction_id: 'bfcb1ff8-a9c7-4213-a55b-58075e8ae8e4',
+                                bank: 'bni',
+                                va_number: '9884518473533892',
+                                fraud_status: 'accept'
+                            }, null, 2),
+                            loading: false,
+                            result: null,
+                        },
 	                },
 		                normalizeTesterUrl(url) {
 		                    const trimmedUrl = (url || '').trim();
@@ -419,6 +437,15 @@
                                 <span class="flex items-center gap-2.5 truncate">
                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">POST</span>
                                     Virtual Account Raw
+                                </span>
+                            </button>
+
+                            <button @click="activeTab = 'virtual-account-callback-test'; sidebarOpen = false"
+                                    :class="activeTab === 'virtual-account-callback-test' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+                                    class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-all">
+                                <span class="flex items-center gap-2.5 truncate">
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">POST</span>
+                                    VA Callback Sandbox
                                 </span>
                             </button>
                         </div>
@@ -1021,13 +1048,13 @@
                     <div class="border-b border-slate-200 pb-6">
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold bg-amber-50 text-amber-700 mb-3">POST · SANDBOX ONLY</span>
                         <h2 class="text-3xl font-extrabold text-slate-900">Virtual Account — Raw Response</h2>
-                        <p class="text-slate-600 mt-2 font-medium">Uji apakah MIDTRANS_SERVER_KEY yang dipakai QRIS juga diterima untuk membuat Virtual Account. Respons dari Midtrans ditampilkan tanpa menormalkan field raw-nya.</p>
+                        <p class="text-slate-600 mt-2 font-medium">Membuat transaksi VA baru menggunakan Midtrans Sandbox dan MIDTRANS_SANDBOX_SERVER_KEY. Respons asli dari Midtrans ditampilkan tanpa menormalkan field-nya.</p>
                     </div>
 
                     <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 space-y-2">
                         <p class="font-extrabold">Catatan pengujian</p>
                         <ul class="list-disc list-inside space-y-1">
-                            <li>Request hanya dikirim ke Midtrans Sandbox; jika environment aplikasi sedang production, endpoint akan menolak pengujian.</li>
+                            <li>Request selalu dikirim ke Midtrans Sandbox dengan MIDTRANS_SANDBOX_SERVER_KEY, terlepas dari MIDTRANS_ENVIRONMENT aplikasi.</li>
                             <li>Server Key tetap di backend dan tidak pernah dikirim ke browser.</li>
                             <li>Setiap klik membuat order ID uji baru. Nominal default Rp10.000 dan bank bisa diubah melalui body JSON.</li>
                         </ul>
@@ -1039,6 +1066,44 @@
                             <span x-text="apiUrl('/api-docs/test-virtual-account')"></span>
                         </div>
                         <p class="text-xs text-slate-500 mt-2">Endpoint internal untuk proxy request ke Midtrans; bukan endpoint publik payment gateway.</p>
+                    </div>
+                </div>
+
+                <!-- TAB: VIRTUAL ACCOUNT CALLBACK SIMULATOR -->
+                <div x-show="activeTab === 'virtual-account-callback-test'" class="space-y-8 animate-fadeIn">
+                    <div class="border-b border-slate-200 pb-6">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold bg-amber-50 text-amber-700 mb-3">POST · SANDBOX SIMULATION</span>
+                        <h2 class="text-3xl font-extrabold text-slate-900">Virtual Account — Callback Simulator</h2>
+                        <p class="text-slate-600 mt-2 font-medium">Kirim callback simulasi dengan signature yang dibuat di backend memakai Sandbox Server Key. Playground memanggil handler webhook billing dengan payload Midtrans dan menampilkan respons yang dihasilkan.</p>
+                    </div>
+
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 space-y-2">
+                        <p class="font-extrabold">Sebelum mengirim</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Gunakan <code class="bg-amber-100 px-1 rounded">order_id</code> transaksi VA billing yang benar, biasanya diawali <code class="bg-amber-100 px-1 rounded">QBP-</code>, dan nominal yang sama persis.</li>
+                            <li>Status <code class="bg-amber-100 px-1 rounded">settlement</code> atau <code class="bg-amber-100 px-1 rounded">capture</code> dapat menandai pembayaran sebagai paid dan memperbarui tanggal aktif outlet.</li>
+                            <li>Simulasi ini berjalan di aplikasi lokal/server saat ini; tidak mengirim notifikasi sungguhan ke Midtrans dan tidak pernah menampilkan Server Key.</li>
+                        </ul>
+                    </div>
+
+                    <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-5 space-y-2">
+                        <div class="flex items-center justify-between gap-3">
+                            <h3 class="text-sm font-bold uppercase text-indigo-900 tracking-wider">URL Callback VA Midtrans</h3>
+                            <button type="button"
+                                    class="rounded-lg bg-white border border-indigo-200 px-3 py-1.5 text-xs font-bold text-indigo-700 hover:bg-indigo-100"
+                                    @click="navigator.clipboard.writeText(apiUrl('/api/qris-billing/midtrans-callback'))">
+                                Salin URL
+                            </button>
+                        </div>
+                        <div class="bg-slate-900 text-slate-100 px-4 py-3 rounded-xl font-mono text-sm break-all border border-slate-800"
+                             x-text="apiUrl('/api/qris-billing/midtrans-callback')"></div>
+                        <p class="text-xs text-indigo-900/80">Set URL lengkap ini di pengaturan Payment Notification URL Midtrans Sandbox. Untuk localhost, Midtrans memerlukan URL publik/tunnel agar dapat mengirim callback nyata.</p>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-2.5">Endpoint Playground untuk Simulasi</h3>
+                        <div class="bg-slate-900 text-slate-100 px-4 py-3 rounded-xl font-mono text-sm break-all border border-slate-800"
+                             x-text="apiUrl('/api-docs/test-virtual-account-callback')"></div>
                     </div>
                 </div>
 
