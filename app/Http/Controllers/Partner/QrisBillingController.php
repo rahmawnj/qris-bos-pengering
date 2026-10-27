@@ -29,9 +29,10 @@ class QrisBillingController extends Controller
         $validated = $request->validate([
             'va_bank' => ['required', 'in:bca,bni,bri,permata,cimb'],
         ]);
-        $serverKey = (string) config('services.midtrans.server_key');
+        // QRIS billing VA dikunci ke Sandbox agar tidak membuat transaksi produksi.
+        $serverKey = (string) config('services.midtrans.sandbox_server_key');
         if ($serverKey === '') {
-            return back()->with('error', 'Konfigurasi MIDTRANS_SERVER_KEY belum tersedia.');
+            return back()->with('error', 'Konfigurasi MIDTRANS_SANDBOX_SERVER_KEY belum tersedia.');
         }
 
         $outlet->loadMissing(['devices', 'qrisBillingPayments']);
@@ -68,9 +69,9 @@ class QrisBillingController extends Controller
         ]);
 
         try {
-            $baseUrl = config('services.midtrans.environment') === 'production'
-                ? 'https://api.midtrans.com'
-                : 'https://api.sandbox.midtrans.com';
+            // Jangan mengikuti MIDTRANS_ENVIRONMENT untuk alur ini: selalu gunakan Sandbox.
+            $environment = 'sandbox';
+            $baseUrl = 'https://api.sandbox.midtrans.com';
             $payload = [
                 'payment_type' => 'bank_transfer',
                 'transaction_details' => [
@@ -82,6 +83,16 @@ class QrisBillingController extends Controller
                     'first_name' => mb_substr((string) $outlet->outlet_name, 0, 50),
                 ],
             ];
+            \\Illuminate\\Support\\Facades\\Log::info('QRIS billing Midtrans VA request.', [
+                'environment' => $environment,
+                'url' => $baseUrl . '/v2/charge',
+                'outlet_id' => $outlet->id,
+                'payment_id' => $payment->id,
+                'order_id' => $orderId,
+                'amount' => (int) $payment->amount,
+                'bank' => $validated['va_bank'],
+            ]);
+
             $response = Http::withBasicAuth($serverKey, '')
                 ->acceptJson()
                 ->asJson()
