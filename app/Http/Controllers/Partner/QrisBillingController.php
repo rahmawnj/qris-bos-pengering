@@ -17,7 +17,7 @@ class QrisBillingController extends Controller
     public function report(Request $request){$status=$request->input('status','paid');$search=$request->input('search');$period=$request->input('period');$outletIds=$this->accessibleOutletIds();$payments=QrisBillingPayment::with(['outlet.devices'])->whereIn('outlet_id',$outletIds)->when($status,fn($q)=>$q->where('status',$status))->when($period,fn($q)=>$q->whereRaw("DATE_FORMAT(period_end, '%Y-%m') = ?",[$period]))->when($search,function($q)use($search){$q->whereHas('outlet',fn($x)=>$x->where('outlet_name','like',"%{$search}%")->orWhere('code','like',"%{$search}%"));})->latest('paid_at')->get();$summary=['total'=>$payments->count(),'pending'=>$payments->where('status','pending')->count(),'paid'=>$payments->where('status','paid')->count(),'amount'=>$payments->sum('amount'),'paid_amount'=>$payments->where('status','paid')->sum('amount')];return view('partner.qris_billing.report',compact('payments','period','status','search','summary'));}
     public function show(Request $request,Outlet $outlet){$this->authorizeOutlet($outlet);if(!$outlet->qris_billing_enabled)return redirect()->route('partner.qris-billing.report')->with('error','Outlet ini tidak memiliki fitur perpanjangan QRIS.');$outlet=$this->decorateOutlet($outlet,now()->format('Y-m'));$outlet->load(['devices']);$paymentInstruction=$this->paymentInstruction();return view('partner.qris_billing.show',compact('outlet','paymentInstruction'));}
     public function showPayment(Request $request,QrisBillingPayment $payment){abort_unless(in_array($payment->outlet_id,$this->accessibleOutletIds()),403,'Akses outlet ditolak.');$payment->loadMissing(['outlet.devices']);$outlet=$this->outletFromBillingPayment($payment);abort_unless($outlet,404,'Data perpanjangan tidak ditemukan.');$paymentInstruction=$this->paymentInstruction();return view('partner.qris_billing.show',compact('outlet','paymentInstruction'));}
-    public function upload(Request $request,Outlet $outlet){$this->authorizeOutlet($outlet);if(!$outlet->qris_billing_enabled)return redirect()->route('partner.qris-billing.report')->with('error','Outlet ini tidak memiliki fitur perpanjangan QRIS.');$outlet=$this->decorateOutlet($outlet,now()->format('Y-m'));$outlet->load(['devices']);$period=$outlet->billing_action_period??now()->format('Y-m');$paymentInstruction=$this->paymentInstruction();return view('partner.qris_billing.upload',compact('outlet','period','paymentInstruction'));}
+    public function upload(Request $request,Outlet $outlet){$this->authorizeOutlet($outlet);if(!$outlet->qris_billing_enabled)return redirect()->route('partner.qris-billing.report')->with('error','Outlet ini tidak memiliki fitur perpanjangan QRIS.');return redirect()->route('partner.qris-billing.show',$outlet);}
 
     public function createVirtualAccount(Request $request, Outlet $outlet)
     {
@@ -152,7 +152,7 @@ class QrisBillingController extends Controller
             ]);
             $userMessage = str_contains($e->getMessage(), 'Payment channel is not activated')
                 ? 'Kanal Virtual Account bank ini belum aktif di akun Midtrans untuk environment yang digunakan. Aktifkan kanal pembayaran di dashboard Midtrans atau pilih bank yang sudah aktif.'
-                : 'Virtual Account gagal dibuat. Periksa log aplikasi untuk detailnya, atau gunakan upload bukti transfer.';
+                : 'Virtual Account gagal dibuat. Periksa log aplikasi untuk detailnya atau pilih bank lain.';
             return back()->with('error', $userMessage);
         }
 
