@@ -73,13 +73,11 @@ class ApiDocsController extends Controller
             'amount' => 'required|integer|min:1000|max:1000000',
         ]);
 
-        if (config('services.midtrans.environment') === 'production') {
-            return response()->json(['ok' => false, 'message' => 'Playground ini hanya untuk environment sandbox.'], 422);
-        }
-
-        $key = (string) config('services.midtrans.server_key');
+        // Playground VA selalu menggunakan kredensial Sandbox terpisah,
+        // tanpa mengubah environment/key Production yang dipakai integrasi utama.
+        $key = (string) config('services.midtrans.sandbox_server_key');
         if ($key === '') {
-            return response()->json(['ok' => false, 'message' => 'MIDTRANS_SERVER_KEY belum dikonfigurasi.'], 422);
+            return response()->json(['ok' => false, 'message' => 'MIDTRANS_SANDBOX_SERVER_KEY belum dikonfigurasi.'], 422);
         }
 
         $url = 'https://api.sandbox.midtrans.com/v2/charge';
