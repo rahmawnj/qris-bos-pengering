@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     <title>Dokumentasi API - QRIS & Device Bypass</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -117,6 +118,19 @@
 	                        loading: false,
 	                        result: null,
 	                    },
+                        'virtual-account-test': {
+                            title: 'Test Virtual Account — Raw Response Midtrans',
+                            method: 'POST',
+                            url: apiUrl('/api-docs/test-virtual-account'),
+                            params: [],
+                            confirmBeforeSubmit: 'Tes ini akan membuat transaksi Virtual Account di Midtrans Sandbox. Lanjutkan?',
+                            body: JSON.stringify({
+                                bank: 'bca',
+                                amount: 10000
+                            }, null, 2),
+                            loading: false,
+                            result: null,
+                        },
 	                },
 		                normalizeTesterUrl(url) {
 		                    const trimmedUrl = (url || '').trim();
@@ -163,6 +177,10 @@
                         return;
                     }
 
+                    if (tester.confirmBeforeSubmit && !window.confirm(tester.confirmBeforeSubmit)) {
+                        return;
+                    }
+
                     tester.loading = true;
                     tester.result = null;
                     this.syncTesterServiceType();
@@ -180,6 +198,7 @@
                             method: tester.method,
                             headers: {
                                 Accept: 'application/json',
+                                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content || '',
                             },
                         };
 
@@ -203,7 +222,7 @@
                             : await response.text();
 
                         tester.result = {
-                            ok: response.ok,
+                            ok: response.ok && !(payload && typeof payload === 'object' && payload.ok === false),
                             status: response.status,
                             statusText: response.statusText,
                             elapsedMs,
@@ -391,6 +410,15 @@
                                 <span class="flex items-center gap-2.5 truncate">
                                     <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">POST</span>
                                     payment-status-update
+                                </span>
+                            </button>
+
+                            <button @click="activeTab = 'virtual-account-test'; sidebarOpen = false"
+                                    :class="activeTab === 'virtual-account-test' ? 'bg-indigo-50 text-indigo-700 font-semibold' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'"
+                                    class="w-full text-left px-3 py-2 rounded-lg text-sm flex items-center justify-between transition-all">
+                                <span class="flex items-center gap-2.5 truncate">
+                                    <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">POST</span>
+                                    Virtual Account Raw
                                 </span>
                             </button>
                         </div>
@@ -985,6 +1013,32 @@
 }</code></pre>
                             </div>
                         </div>
+                    </div>
+                </div>
+
+                <!-- TAB: VIRTUAL ACCOUNT RAW RESPONSE -->
+                <div x-show="activeTab === 'virtual-account-test'" class="space-y-8 animate-fadeIn">
+                    <div class="border-b border-slate-200 pb-6">
+                        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold bg-amber-50 text-amber-700 mb-3">POST · SANDBOX ONLY</span>
+                        <h2 class="text-3xl font-extrabold text-slate-900">Virtual Account — Raw Response</h2>
+                        <p class="text-slate-600 mt-2 font-medium">Uji apakah MIDTRANS_SERVER_KEY yang dipakai QRIS juga diterima untuk membuat Virtual Account. Respons dari Midtrans ditampilkan tanpa menormalkan field raw-nya.</p>
+                    </div>
+
+                    <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 space-y-2">
+                        <p class="font-extrabold">Catatan pengujian</p>
+                        <ul class="list-disc list-inside space-y-1">
+                            <li>Request hanya dikirim ke Midtrans Sandbox; jika environment aplikasi sedang production, endpoint akan menolak pengujian.</li>
+                            <li>Server Key tetap di backend dan tidak pernah dikirim ke browser.</li>
+                            <li>Setiap klik membuat order ID uji baru. Nominal default Rp10.000 dan bank bisa diubah melalui body JSON.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h3 class="text-sm font-bold uppercase text-slate-400 tracking-wider mb-2.5">Endpoint Playground</h3>
+                        <div class="bg-slate-900 text-slate-100 px-4 py-3 rounded-xl font-mono text-sm break-all border border-slate-800">
+                            <span x-text="apiUrl('/api-docs/test-virtual-account')"></span>
+                        </div>
+                        <p class="text-xs text-slate-500 mt-2">Endpoint internal untuk proxy request ke Midtrans; bukan endpoint publik payment gateway.</p>
                     </div>
                 </div>
 
