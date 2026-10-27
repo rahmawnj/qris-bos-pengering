@@ -184,7 +184,7 @@ class ApiDocsController extends Controller
 
         return response()->json([
             'ok' => $callbackResponse->getStatusCode() < 400
-                && !($callbackBody['status'] ?? null) === 'error',
+                && ($callbackBody['status'] ?? null) !== 'error',
             'environment' => 'sandbox',
             'callback_url' => $callbackUrl,
             'delivery_mode' => 'Simulasi internal ke handler callback Laravel. Tidak mengirim notifikasi sungguhan ke Midtrans.',
