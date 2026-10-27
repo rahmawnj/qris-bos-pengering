@@ -10,7 +10,7 @@
 <div class="mb-4"><div class="text-muted small mb-1">Total yang harus dibayar</div><div class="display-6 fw-bold text-primary">Rp {{ number_format($outlet->billing_amount,0,',','.') }}</div>@if($outlet->billing_due_date)<div class="text-muted small mt-1">Aktif sampai: <span class="fw-bold">{{ $outlet->billing_due_date->format('d/m/Y') }}</span></div>@endif</div>
 @if($outlet->billing_status==='prepay')<div class="alert alert-warning"><i class="fa fa-clock me-1"></i> Pembayaran sudah dibuka lebih awal. Jika dibayar sekarang, masa aktif tetap dihitung dari tanggal aktif sampai saat ini, bukan dari tanggal pembayaran.</div>@endif
 @if(!empty($outlet->billing_unpaid_periods))<div class="mb-4"><div class="text-muted small fw-bold text-uppercase mb-2">Rincian Bulan</div><div class="border rounded overflow-hidden">@foreach($outlet->billing_unpaid_periods as $item)<div class="d-flex justify-content-between px-3 py-2 {{ !$loop->last?'border-bottom':'' }}"><div class="fw-bold">{{ \Carbon\Carbon::createFromFormat('Y-m',$item['period'])->translatedFormat('F Y') }}</div><div class="fw-bold">Rp {{ number_format($item['amount'],0,',','.') }}</div></div>@endforeach</div></div>@endif
-<div class="alert alert-info border-0 shadow-none mb-0"><h6 class="alert-heading fw-bold mb-2"><i class="fa fa-info-circle me-1"></i> Instruksi Pembayaran</h6><p class="small mb-2">Silakan transfer sesuai nominal di atas ke rekening berikut:</p><div class="bg-white p-3 rounded border mb-2"><div class="text-muted small">{{ $paymentInstruction['bank_name'] }}</div><div class="fw-bold fs-16px mb-1">{{ $paymentInstruction['account_number'] }}</div><div class="text-muted small">a/n {{ $paymentInstruction['account_holder'] }}</div></div><p class="small mb-0 text-muted">Setelah transfer, mohon unggah bukti pembayaran di form sebelah kanan.</p></div>
+<div class="alert alert-info border-0 shadow-none mb-0"><h6 class="alert-heading fw-bold mb-2"><i class="fa fa-info-circle me-1"></i> Pembayaran Virtual Account</h6><p class="small mb-0">Pilih bank pada panel pembayaran. Nomor Virtual Account akan dibuat otomatis sesuai tagihan. Bayar menggunakan nomor VA tersebut sebelum batas waktu berakhir; status akan diperbarui setelah Midtrans mengonfirmasi pembayaran.</p></div>
 </div></div></div>
 <div class="col-md-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4">
 @if($outlet->billing_status==='paid')<div class="text-center py-5"><div class="text-success mb-3"><i class="fa fa-check-circle fa-5x"></i></div><h3>QRIS Aktif</h3><p class="text-muted">Terima kasih. Perpanjangan QRIS telah dikonfirmasi oleh administrator.</p>@if($outlet->billing_payment?->paid_at)<div class="badge bg-light text-dark p-2 border">Diaktifkan pada: {{ $outlet->billing_payment->paid_at->format('d/m/Y H:i') }}</div>@endif</div>
@@ -37,24 +37,49 @@
         <div class="text-center py-5"><div class="text-warning mb-3"><i class="fa fa-clock fa-5x"></i></div><h3>Menunggu Verifikasi</h3><p class="text-muted">Bukti pembayaran Anda sedang diproses oleh tim kami.</p>@if($outlet->billing_payment?->proof_of_payment)<div class="mt-4 text-start"><label class="fw-bold mb-2">Bukti yang telah diunggah:</label><a href="{{ asset('storage/'.$outlet->billing_payment->proof_of_payment) }}" target="_blank" class="d-block"><img src="{{ asset('storage/'.$outlet->billing_payment->proof_of_payment) }}" class="img-fluid rounded border" style="max-height:200px;"></a></div>@endif</div>
     @endif
 @else
-    <h5 class="fw-bold mb-3">Pilih Metode Pembayaran</h5>
-    <div class="border rounded-3 p-3 mb-4">
-        <h6 class="fw-bold"><i class="fa fa-university me-1 text-primary"></i> Bayar dengan Virtual Account</h6>
-        <p class="text-muted small">Nomor VA dibuat otomatis dan status diperbarui setelah pembayaran terkonfirmasi.</p>
-        <form action="{{ route('partner.qris-billing.virtual-account', $outlet) }}" method="POST" class="mb-3">
-            @csrf
-            <label for="va_bank" class="form-label">Pilih Bank</label>
-            <select name="va_bank" id="va_bank" class="form-select mb-3" required>
-                <option value="bca">BCA</option><option value="bni">BNI</option><option value="bri">BRI</option>
-                <option value="permata">Permata</option><option value="cimb">CIMB Niaga</option>
-            </select>
-            <button type="submit" class="btn btn-success w-100"><i class="fa fa-credit-card me-1"></i> Buat Virtual Account</button>
-        </form>
-    </div>
-    <h6 class="fw-bold mb-2">Atau upload bukti transfer manual</h6>
-    <p class="text-muted mb-4">Pilih cara manual jika sudah transfer ke rekening yang tertera.</p>
-    <form action="{{ route('partner.outlets.billing.upload',$outlet) }}" method="POST" enctype="multipart/form-data">@csrf<div class="upload-zone p-5 text-center border-2 border-dashed rounded-4 mb-4 bg-light"><i class="fa fa-cloud-upload-alt fa-4x text-muted mb-3"></i><h6 class="mb-2">Klik untuk memilih gambar bukti transfer</h6><p class="text-muted small mb-3">Format: JPG, PNG (Maks 5MB)</p><input type="file" name="proof_of_payment" class="form-control" accept="image/*" required></div><button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill shadow-sm"><i class="fa fa-paper-plane me-1"></i> Kirim Konfirmasi Pembayaran</button></form>@endif
+    <h5 class="fw-bold mb-2">Pilih Bank Pembayaran</h5>
+    <p class="text-muted small mb-4">Pilih bank untuk membuat Virtual Account. Kamu tidak perlu mengunggah bukti transfer.</p>
+    <form action="{{ route('partner.qris-billing.virtual-account', $outlet) }}" method="POST" id="qris-va-form">
+        @csrf
+        <div class="bank-grid mb-4">
+            <label class="bank-option">
+                <input type="radio" name="va_bank" value="bca" required>
+                <span class="bank-card"><img src="https://dicoding-web-img.sgp1.digitaloceanspaces.com/original/jobs/dos%3Acompany_logo_pt_bank_central_asia_tbk_200723102046.jpg" alt="Logo BCA"><span>BCA</span></span>
+            </label>
+            <label class="bank-option">
+                <input type="radio" name="va_bank" value="bni" required>
+                <span class="bank-card"><img src="https://i.pinimg.com/736x/ef/33/52/ef3352ee1f22a05508f2aa618bac5642.jpg" alt="Logo BNI"><span>BNI</span></span>
+            </label>
+            <label class="bank-option">
+                <input type="radio" name="va_bank" value="bri" required>
+                <span class="bank-card"><img src="https://zonalogo.com/assets/logo-bank-bri.webp" alt="Logo BRI"><span>BRI</span></span>
+            </label>
+            <label class="bank-option">
+                <input type="radio" name="va_bank" value="permata" required>
+                <span class="bank-card"><img src="https://zonalogo.com/assets/logo-bank-permata.webp" alt="Logo Permata Bank"><span>Permata Bank</span></span>
+            </label>
+            <label class="bank-option">
+                <input type="radio" name="va_bank" value="cimb" required>
+                <span class="bank-card"><img src="https://www.itworks.id/wp-content/uploads/2019/06/Logo-Bank-CIMB-Niaga.jpg" alt="Logo CIMB Niaga"><span>CIMB Niaga</span></span>
+            </label>
+        </div>
+        <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill shadow-sm"><i class="fa fa-university me-1"></i> Buat Virtual Account</button>
+    </form>
+@endif
 </div></div></div></div>
 <div class="mt-4"><a href="{{ route('partner.qris-billing.report') }}" class="btn btn-default"><i class="fa fa-arrow-left me-1"></i> Kembali ke Laporan</a></div>
 @endsection
-@push('styles')<style>.bg-primary-transparent-1{background-color:rgba(0,172,172,.1)}.upload-zone{transition:all .3s ease;border:2px dashed #ddd}.upload-zone:hover{border-color:#00acac;background-color:rgba(0,172,172,.02)}</style>@endpush
+@push('styles')
+<style>
+.bg-primary-transparent-1{background-color:rgba(0,172,172,.1)}
+.bank-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.bank-option{position:relative;display:block;cursor:pointer;margin:0}
+.bank-option input{position:absolute;opacity:0;pointer-events:none}
+.bank-card{height:108px;border:1.5px solid #e5e7eb;border-radius:14px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;padding:12px;transition:border-color .18s ease,box-shadow .18s ease,background .18s ease}
+.bank-card img{display:block;width:100%;max-width:132px;height:42px;object-fit:contain}
+.bank-card span{font-size:13px;font-weight:700;color:#344054}
+.bank-option input:checked+.bank-card{border-color:#00acac;background:rgba(0,172,172,.06);box-shadow:0 0 0 3px rgba(0,172,172,.12)}
+.bank-option input:focus-visible+.bank-card{outline:3px solid rgba(0,172,172,.3);outline-offset:2px}
+@media(min-width:768px){.bank-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+</style>
+@endpush
