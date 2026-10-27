@@ -13,7 +13,8 @@ class QrisBillingWebhookController extends Controller
     public function midtrans(Request $request)
     {
         $payload = $request->all();
-        $serverKey = (string) config('services.midtrans.server_key');
+        // Callback VA billing juga divalidasi dengan key Sandbox yang sama.
+        $serverKey = (string) config('services.midtrans.sandbox_server_key');
         $orderId = (string) ($payload['order_id'] ?? '');
         $statusCode = (string) ($payload['status_code'] ?? '');
         $grossAmount = (string) ($payload['gross_amount'] ?? '');
@@ -25,7 +26,7 @@ class QrisBillingWebhookController extends Controller
 
         $expectedSignature = hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey);
         if (!hash_equals($expectedSignature, $signature)) {
-            Log::warning('QRIS billing Midtrans callback signature mismatch.', ['order_id' => $orderId]);
+            Log::warning('QRIS billing Midtrans Sandbox callback signature mismatch.', ['environment' => 'sandbox', 'order_id' => $orderId]);
             return response()->json(['status' => 'error', 'message' => 'Invalid signature.'], 403);
         }
 
