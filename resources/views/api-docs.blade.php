@@ -136,6 +136,7 @@
                             method: 'POST',
                             url: apiUrl('/api-docs/test-virtual-account-callback'),
                             params: [],
+                            dispatchCallback: true,
                             confirmBeforeSubmit: 'Callback settlement/capture dapat mengubah pembayaran yang cocok menjadi PAID dan memperbarui masa aktif outlet. Pastikan order_id dan status sudah benar. Lanjutkan?',
                             body: JSON.stringify({
                                 order_id: 'QBP-38-261027165345-EW7AY',
@@ -233,20 +234,58 @@
 
                         const startedAt = performance.now();
                         const response = await fetch(requestUrl.toString(), options);
-                        const elapsedMs = Math.round(performance.now() - startedAt);
                         const contentType = response.headers.get('content-type') || '';
                         const payload = contentType.includes('application/json')
                             ? await response.json()
                             : await response.text();
 
-                        tester.result = {
-                            ok: response.ok && !(payload && typeof payload === 'object' && payload.ok === false),
-                            status: response.status,
-                            statusText: response.statusText,
-                            elapsedMs,
-                            url: requestUrl.toString(),
-                            body: payload,
-                        };
+                        if (tester.dispatchCallback && response.ok && payload && typeof payload === 'object'
+                            && payload.ok !== false && payload.callback_url && payload.payload) {
+                            // Payload bertanda tangan dari backend dikirim sebagai HTTP POST
+                            // langsung ke endpoint callback yang dipakai Midtrans.
+                            const callbackResponse = await fetch(payload.callback_url, {
+                                method: 'POST',
+                                headers: {
+                                    Accept: 'application/json',
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify(payload.payload),
+                            });
+                            const callbackContentType = callbackResponse.headers.get('content-type') || '';
+                            const callbackBody = callbackContentType.includes('application/json')
+                                ? await callbackResponse.json()
+                                : await callbackResponse.text();
+
+                            tester.result = {
+                                ok: callbackResponse.ok
+                                    && !(callbackBody && typeof callbackBody === 'object' && callbackBody.status === 'error'),
+                                status: callbackResponse.status,
+                                statusText: callbackResponse.statusText,
+                                elapsedMs: Math.round(performance.now() - startedAt),
+                                url: payload.callback_url,
+                                body: {
+                                    environment: payload.environment,
+                                    delivery_mode: 'HTTP POST dari browser ke endpoint callback Laravel yang sebenarnya',
+                                    prepare_endpoint: requestUrl.toString(),
+                                    callback_url: payload.callback_url,
+                                    signed_payload: payload.payload,
+                                    callback_response: {
+                                        status: callbackResponse.status,
+                                        statusText: callbackResponse.statusText,
+                                        body: callbackBody,
+                                    },
+                                },
+                            };
+                        } else {
+                            tester.result = {
+                                ok: response.ok && !(payload && typeof payload === 'object' && payload.ok === false),
+                                status: response.status,
+                                statusText: response.statusText,
+                                elapsedMs: Math.round(performance.now() - startedAt),
+                                url: requestUrl.toString(),
+                                body: payload,
+                            };
+                        }
                     } catch (error) {
                         tester.result = {
                             ok: false,
@@ -1074,7 +1113,7 @@
                     <div class="border-b border-slate-200 pb-6">
                         <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-extrabold bg-amber-50 text-amber-700 mb-3">POST · SANDBOX SIMULATION</span>
                         <h2 class="text-3xl font-extrabold text-slate-900">Virtual Account — Callback Simulator</h2>
-                        <p class="text-slate-600 mt-2 font-medium">Kirim callback simulasi dengan signature yang dibuat di backend memakai Sandbox Server Key. Playground memanggil handler webhook billing dengan payload Midtrans dan menampilkan respons yang dihasilkan.</p>
+                        <p class="text-slate-600 mt-2 font-medium">Playground membuat signature di backend memakai Sandbox Server Key, lalu browser benar-benar mengirim HTTP POST ke URL callback Laravel. Respons dari endpoint callback ditampilkan di bawah.</p>
                     </div>
 
                     <div class="rounded-xl border border-amber-200 bg-amber-50 p-5 text-sm text-amber-950 space-y-2">
