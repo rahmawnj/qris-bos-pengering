@@ -49,6 +49,15 @@ class QrisBillingWebhookController extends Controller
 
         $transactionStatus = strtolower((string) ($payload['transaction_status'] ?? ''));
         $fraudStatus = strtolower((string) ($payload['fraud_status'] ?? ''));
+
+        Log::info('QRIS billing Midtrans Sandbox callback received.', [
+            'environment' => 'sandbox',
+            'order_id' => $orderId,
+            'status_code' => $statusCode,
+            'transaction_status' => $transactionStatus,
+            'transaction_id' => $payload['transaction_id'] ?? null,
+        ]);
+
         $isPaid = $transactionStatus === 'settlement'
             || ($transactionStatus === 'capture' && ($fraudStatus === '' || $fraudStatus === 'accept'));
 
@@ -76,7 +85,7 @@ class QrisBillingWebhookController extends Controller
                 return;
             }
 
-            if (in_array($transactionStatus, ['expire', 'cancel', 'deny'], true)) {
+            if (in_array($transactionStatus, ['expire', 'cancel', 'deny', 'failure', 'failed'], true)) {
                 $lockedPayment->status = $transactionStatus === 'expire' ? 'expired' : 'failed';
             }
 
