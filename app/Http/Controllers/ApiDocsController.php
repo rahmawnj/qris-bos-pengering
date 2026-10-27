@@ -64,6 +64,53 @@ class ApiDocsController extends Controller
     /**
      * Clear the API documentation session (lock the screen).
      */
+    public function testVirtualAccount(Request $request)
+    {
+        abort_unless(session('api_docs_authenticated'), 403);
+
+        $data = $request->validate([
+            'bank' => 'required|in:bca,bni,bri,permata,cimb',
+            'amount' => 'required|integer|min:1000|max:1000000',
+        ]);
+
+        if (config('services.midtrans.environment') === 'production') {
+            return response()->json(['ok' => false, 'message' => 'Playground ini hanya untuk environment sandbox.'], 422);
+        }
+
+        $key = (string) config('services.midtrans.server_key');
+        if ($key === '') {
+            return response()->json(['ok' => false, 'message' => 'MIDTRANS_SERVER_KEY belum dikonfigurasi.'], 422);
+        }
+
+        $url = 'https://api.sandbox.midtrans.com/v2/charge';
+        $payload = [
+            'payment_type' => 'bank_transfer',
+            'transaction_details' => [
+                'order_id' => 'APIDOCS-VA-' . now()->format('ymdHis') . '-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(6)),
+                'gross_amount' => (int) $data['amount'],
+            ],
+            'bank_transfer' => ['bank' => $data['bank']],
+            'customer_details' => ['first_name' => 'API Docs Test', 'email' => 'api-docs-test@example.com'],
+        ];
+
+        $response = \Illuminate\Support\Facades\Http::withBasicAuth($key, '')
+            ->acceptJson()->asJson()->timeout(20)->post($url, $payload);
+        $raw = $response->json();
+
+        return response()->json([
+            'ok' => $response->successful() && (string) data_get($raw, 'status_code', '') === '201',
+            'environment' => 'sandbox',
+            'request' => [
+                'method' => 'POST',
+                'url' => $url,
+                'authentication' => 'Basic Auth; Server Key tidak diekspos ke browser',
+                'body' => $payload,
+            ],
+            'gateway' => ['http_status' => $response->status()],
+            'raw' => $raw ?? $response->body(),
+        ]);
+    }
+
     public function logout()
     {
         session()->forget('api_docs_authenticated');
