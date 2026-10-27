@@ -29,8 +29,42 @@
                 </div>
                 <div class="text-muted small">Total pembayaran</div>
                 <div class="fw-bold fs-4 mb-2">Rp {{ number_format($outlet->billing_payment->amount,0,',','.') }}</div>
-                @if($outlet->billing_payment->expires_at)<div class="text-danger small">Batas pembayaran: {{ $outlet->billing_payment->expires_at->format('d/m/Y H:i') }}</div>@endif
-                <div class="small text-muted mt-3">Status akan diperbarui otomatis setelah gateway mengonfirmasi pembayaran.</div>
+                @if($outlet->billing_payment->expires_at)
+                    <div class="text-danger small">Batas pembayaran: {{ $outlet->billing_payment->expires_at->format('d/m/Y H:i:s') }}</div>
+                    <div class="small text-danger fw-bold mt-2" id="qris-va-countdown" aria-live="polite">Menghitung sisa waktu...</div>
+                    <script>
+                    (function () {
+                        const expiryIso = @json($outlet->billing_payment->expires_at->toIso8601String());
+                        const expiryTimestamp = Date.parse(expiryIso);
+                        const countdown = document.getElementById('qris-va-countdown');
+                        if (!Number.isFinite(expiryTimestamp) || !countdown) return;
+
+                        let reloadStarted = false;
+                        function refreshVaExpiry() {
+                            const remaining = expiryTimestamp - Date.now();
+                            if (remaining <= 0) {
+                                if (!reloadStarted) {
+                                    reloadStarted = true;
+                                    countdown.textContent = 'VA sudah kedaluwarsa. Memuat ulang halaman...';
+                                    window.setTimeout(function () {
+                                        window.location.reload();
+                                    }, 700);
+                                }
+                                return;
+                            }
+
+                            const minutes = Math.floor(remaining / 60000);
+                            const seconds = Math.floor((remaining % 60000) / 1000);
+                            countdown.textContent = 'Sisa waktu pembayaran: '
+                                + minutes + ':' + String(seconds).padStart(2, '0');
+                            window.setTimeout(refreshVaExpiry, 1000);
+                        }
+
+                        refreshVaExpiry();
+                    })();
+                    </script>
+                @endif
+                <div class="small text-muted mt-3">Status akan diperbarui otomatis setelah gateway mengonfirmasi pembayaran. Jika VA kedaluwarsa atau gagal, halaman akan dimuat ulang agar kamu bisa membuat VA baru.</div>
             </div>
         </div>
     @else
