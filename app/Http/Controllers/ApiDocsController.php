@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\ServiceType;
-use App\Http\Controllers\API\QrisBillingWebhookController;
 use Illuminate\Http\Request;
 
 class ApiDocsController extends Controller
@@ -111,8 +110,8 @@ class ApiDocsController extends Controller
     }
 
     /**
-     * Simulate a signed Midtrans Sandbox notification through the billing webhook handler.
-     * Server Key is used only on the server and is never returned to the browser.
+     * Prepare a signed Midtrans Sandbox notification for the API playground.
+     * The browser sends the returned payload to the real callback route.
      */
     public function testVirtualAccountCallback(Request $request)
     {
@@ -154,7 +153,9 @@ class ApiDocsController extends Controller
         $payload = [
             'transaction_time' => now()->format('Y-m-d H:i:s'),
             'transaction_status' => $transactionStatus,
-            'transaction_id' => $data['transaction_id'] ?: ('PLAYGROUND-' . now()->format('YmdHis')),
+            'transaction_id' => !empty($data['transaction_id'])
+                ? $data['transaction_id']
+                : ('PLAYGROUND-' . now()->format('YmdHis')),
             'status_message' => 'Midtrans Sandbox notification simulated from API playground',
             'status_code' => $statusCode,
             'signature_key' => hash('sha512', $orderId . $statusCode . $grossAmount . $serverKey),
@@ -173,30 +174,21 @@ class ApiDocsController extends Controller
             ]];
         }
 
-        $callbackUrl = route('qris-billing.midtrans-callback');
-        $callbackRequest = Request::create($callbackUrl, 'POST', $payload);
-        $callbackRequest->headers->set('Accept', 'application/json');
-
-        $callbackResponse = app(QrisBillingWebhookController::class)->midtrans($callbackRequest);
-        $callbackBody = method_exists($callbackResponse, 'getData')
-            ? $callbackResponse->getData(true)
-            : $callbackResponse->getContent();
+        $callbackPath = route('qris-billing.midtrans-callback', [], false);
+        $callbackUrl = $request->getSchemeAndHttpHost() . $callbackPath;
 
         return response()->json([
-            'ok' => $callbackResponse->getStatusCode() < 400
-                && ($callbackBody['status'] ?? null) !== 'error',
+            'ok' => true,
             'environment' => 'sandbox',
             'callback_url' => $callbackUrl,
-            'delivery_mode' => 'Simulasi internal ke handler callback Laravel. Tidak mengirim notifikasi sungguhan ke Midtrans.',
+            'delivery_mode' => 'Payload ditandatangani di backend; browser akan mengirim HTTP POST ke endpoint callback sebenarnya.',
             'request' => [
                 'method' => 'POST',
                 'url' => $callbackUrl,
-                'payload' => $payload,
+                'authentication' => 'Signature Sandbox dibuat di backend; Server Key tidak dikirim ke browser.',
+                'body' => $payload,
             ],
-            'callback_response' => [
-                'http_status' => $callbackResponse->getStatusCode(),
-                'body' => $callbackBody,
-            ],
+            'payload' => $payload,
         ]);
     }
 
