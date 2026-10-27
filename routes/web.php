@@ -62,6 +62,7 @@ Route::get('/home/transaction/{order_id}', [LandingController::class, 'transacti
 Route::get('/api-docs', [ApiDocsController::class, 'index'])->name('api-docs.index');
 Route::get('/api-flows', [ApiDocsController::class, 'flows'])->name('api-docs.flows');
 Route::post('/api-docs/auth', [ApiDocsController::class, 'auth'])->name('api-docs.auth');
+Route::post('/api-docs/test-virtual-account', [ApiDocsController::class, 'testVirtualAccount'])->name('api-docs.test-virtual-account');
 Route::get('/api-docs/logout', [ApiDocsController::class, 'logout'])->name('api-docs.logout');
 
 
