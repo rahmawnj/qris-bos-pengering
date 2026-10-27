@@ -41,6 +41,7 @@ return [
         'environment' => env('MIDTRANS_ENVIRONMENT', 'sandbox'),
         'client_key' => env('MIDTRANS_CLIENT_KEY'),
         'server_key' => env('MIDTRANS_SERVER_KEY'),
+        'sandbox_server_key' => env('MIDTRANS_SANDBOX_SERVER_KEY'),
         'callback_url' => env('MIDTRANS_CALLBACK_URL'),
         'fee_rate' => (float) env('MIDTRANS_QRIS_FEE_RATE', 0.007),
     ],
