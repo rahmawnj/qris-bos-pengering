@@ -39,6 +39,30 @@
             }
         }
 
+        .dashboard-chart-loading {
+            position: relative;
+            min-height: 120px;
+        }
+
+        .dashboard-chart-loading::after {
+            content: "Memuat grafik...";
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: inherit;
+            color: #6c757d;
+            font-size: .875rem;
+            background: linear-gradient(90deg, #f8f9fa 25%, #eef1f4 50%, #f8f9fa 75%);
+            background-size: 200% 100%;
+            animation: dashboard-chart-shimmer 1.4s ease-in-out infinite;
+            border-radius: 8px;
+        }
+
+        @keyframes dashboard-chart-shimmer {
+            from { background-position: 100% 0; }
+            to { background-position: -100% 0; }
+        }
+
         .stat-card {
             position: relative;
             border-radius: 14px;
@@ -351,7 +375,7 @@
                         Analisis Transaksi
                         <small>Transaksi per Tanggal (Jumlah)</small>
                     </h4>
-                    <div id="category-line" class="widget-chart-full-width" style="height: 260px;"></div>
+                    <div id="category-line" class="widget-chart-full-width" style="height: 260px;" data-dashboard-chart="true"></div>
                 </div>
                 <div class="widget-chart-sidebar bg-white">
                     <div class="chart-number">
@@ -359,7 +383,7 @@
                         <small>Jumlah Transaksi</small>
                     </div>
                     <div class="flex-grow-1 d-flex align-items-center">
-                        <div id="perbandingan-donut" style="height: 180px"></div>
+                        <div id="perbandingan-donut" style="height: 180px" data-dashboard-chart="true"></div>
                     </div>
                     {{-- Removed manual chart-legend as ApexCharts will generate its own for perbandingan-donut --}}
                 </div>
@@ -372,7 +396,7 @@
                         Kategori Pembayaran
                     </h4>
                 </div>
-                <div id="transaction-summary" style="height: 170px;"></div>
+                <div id="transaction-summary" style="height: 170px;" data-dashboard-chart="true"></div>
                 <div class="list-group mt-auto">
 
                     <a href="javascript:;"
@@ -400,7 +424,7 @@
                     <h4 class="panel-title">Total Transaksi Harian</h4>
                 </div>
                 <div class="panel-body">
-                    <div id="daily-total-transactions-chart" style="height: 300px;"></div>
+                    <div id="daily-total-transactions-chart" style="height: 300px;" data-dashboard-chart="true"></div>
                 </div>
             </div>
         </div>
@@ -410,7 +434,7 @@
                     <h4 class="panel-title">Tren Jam Transaksi</h4>
                 </div>
                 <div class="panel-body">
-                    <div id="hourly-transaction-trend-chart" style="height: 300px;"></div>
+                    <div id="hourly-transaction-trend-chart" style="height: 300px;" data-dashboard-chart="true"></div>
                 </div>
             </div>
         </div>
@@ -425,7 +449,7 @@
                     </h4>
                 </div>
                 <div class="panel-body">
-                    <div id="multi-device-line-chart" style="height: 320px;"></div>
+                    <div id="multi-device-line-chart" style="height: 320px;" data-dashboard-chart="true"></div>
                 </div>
             </div>
         </div>
@@ -437,7 +461,7 @@
                     <h4 class="panel-title">Total Transaksi per Perangkat</h4>
                 </div>
                 <div class="panel-body">
-                    <div id="device-trend-donut-chart" style="height: 300px;"></div>
+                    <div id="device-trend-donut-chart" style="height: 300px;" data-dashboard-chart="true"></div>
                 </div>
             </div>
         </div>
@@ -445,12 +469,116 @@
 @endsection
 
 @push('scripts')
+
+    <script src="{{ asset('assets/plugins/apexcharts/dist/apexcharts.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             document.querySelectorAll('.qris-billing-alert-dismiss').forEach(function (button) {
                 button.addEventListener('click', function () {
                     button.closest('.qris-billing-alert')?.remove();
                 });
+            });
+
+            const chartElements = Array.from(document.querySelectorAll('[data-dashboard-chart="true"]'));
+            chartElements.forEach(function (element) {
+                element.classList.add('dashboard-chart-loading');
+            });
+
+            const chartUrl = new URL(window.location.href);
+            chartUrl.searchParams.set('load_charts', '1');
+
+            fetch(chartUrl.toString(), {
+                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
+                credentials: 'same-origin'
+            })
+            .then(function (response) {
+                if (!response.ok) throw new Error('Gagal memuat data dashboard (' + response.status + ')');
+                return response.json();
+            })
+            .then(function (data) {
+                chartElements.forEach(function (element) {
+                    element.classList.remove('dashboard-chart-loading');
+                });
+                const makeChart = function (id, options) {
+                    const element = document.getElementById(id);
+                    if (!element || typeof ApexCharts === 'undefined') return;
+                    element.innerHTML = '';
+                    const chart = new ApexCharts(element, options);
+                    chart.render();
+                };
+                const base = { chart: { toolbar: { show: false }, animations: { enabled: false }, fontFamily: 'inherit' }, noData: { text: 'Belum ada data' } };
+                const colors = ['#348fe2', '#00acac', '#f59c1a'];
+
+                makeChart('category-line', {
+                    ...base, chart: { ...base.chart, type: 'area', height: 260, stacked: false },
+                    series: [
+                        { name: 'Manual', data: (data.seriesData && data.seriesData.manual || []) },
+                        { name: 'QRIS', data: (data.seriesData && data.seriesData.qris || []) },
+                        { name: 'Member', data: (data.seriesData && data.seriesData.member || []) }
+                    ],
+                    xaxis: { categories: data.categories || [] }, colors: colors,
+                    dataLabels: { enabled: false }, stroke: { curve: 'smooth', width: 2 },
+                    fill: { type: 'gradient', gradient: { opacityFrom: .35, opacityTo: .05 } }
+                });
+                makeChart('perbandingan-donut', {
+                    ...base, chart: { ...base.chart, type: 'donut', height: 180 },
+                    labels: data.donutLabels || [], series: data.donutData || [],
+                    legend: { position: 'bottom' }, colors: colors
+                });
+                makeChart('transaction-summary', {
+                    ...base, chart: { ...base.chart, type: 'donut', height: 170 },
+                    labels: data.donutLabels || [], series: data.donutData || [],
+                    legend: { show: false }, dataLabels: { enabled: true }, colors: colors
+                });
+                makeChart('daily-total-transactions-chart', {
+                    ...base, chart: { ...base.chart, type: 'bar', height: 300 },
+                    series: [
+                        { name: 'Washer', data: data.dailyWasherSeriesData || [] },
+                        { name: 'Dryer', data: data.dailyDryerSeriesData || [] }
+                    ],
+                    xaxis: { categories: data.dailyTransactionCategories || [] },
+                    plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } }, colors: colors
+                });
+                makeChart('hourly-transaction-trend-chart', {
+                    ...base, chart: { ...base.chart, type: 'bar', height: 300 },
+                    series: [{ name: 'Transaksi', data: data.hourlyData || [] }],
+                    xaxis: { categories: data.hourlyLabels || [] },
+                    plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } }, colors: [colors[0]]
+                });
+                const multi = data.dataMultiDeviceChart || {};
+                const multiSeries = multi.multiDeviceChartSeriesData || [];
+                makeChart('multi-device-line-chart', {
+                    ...base, chart: { ...base.chart, type: 'line', height: 320 },
+                    series: multiSeries,
+                    xaxis: { categories: multi.multiDeviceChartCategories || [] },
+                    stroke: { curve: 'smooth', width: 2 }, markers: { size: 0 }, colors: colors
+                });
+                const trend = data.trendDeviceDonut || {};
+                makeChart('device-trend-donut-chart', {
+                    ...base, chart: { ...base.chart, type: 'donut', height: 300 },
+                    labels: trend.trendDeviceDonutLabels || [],
+                    series: trend.trendDeviceDonutData || [],
+                    legend: { position: 'bottom' }, colors: colors
+                });
+
+                const transactionCount = document.querySelector('.widget-chart-sidebar .chart-number');
+                if (transactionCount) {
+                    const small = transactionCount.querySelector('small');
+                    transactionCount.textContent = Number(data.totalTransactions || 0).toLocaleString('id-ID') + ' ';
+                    if (small) transactionCount.appendChild(small);
+                }
+                const summaryBadges = document.querySelectorAll('.list-group .badge');
+                if (summaryBadges.length >= 2) {
+                    summaryBadges[0].textContent = Number(data.totalManualTransactions || 0).toLocaleString('id-ID');
+                    summaryBadges[1].textContent = Number(data.totalQrisTransactions || 0).toLocaleString('id-ID');
+                }
+            })
+            .catch(function (error) {
+                chartElements.forEach(function (element) {
+                    element.classList.remove('dashboard-chart-loading');
+                    element.innerHTML = '<div class="text-muted small text-center p-3">Grafik gagal dimuat. Muat ulang halaman untuk mencoba lagi.</div>';
+                });
+                console.error('Dashboard chart loading error:', error);
             });
         });
     </script>

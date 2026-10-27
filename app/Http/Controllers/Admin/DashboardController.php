@@ -142,6 +142,26 @@ class DashboardController extends Controller
         );
 
         if (empty($outletIds)) {
+            if ($request->boolean('load_charts')) {
+                return response()->json([
+                    'categories' => [],
+                    'seriesData' => ['manual' => [], 'qris' => [], 'member' => []],
+                    'donutLabels' => [],
+                    'donutData' => [],
+                    'serviceLabels' => [],
+                    'serviceData' => [],
+                    'dailyTransactionCategories' => [],
+                    'dailyWasherSeriesData' => [],
+                    'dailyDryerSeriesData' => [],
+                    'hourlyLabels' => [],
+                    'hourlyData' => [],
+                    'dataMultiDeviceChart' => ['multiDeviceChartCategories' => [], 'multiDeviceChartSeriesData' => [], 'multiDeviceChartTopSeriesData' => [], 'multiDeviceChartBottomSeriesData' => []],
+                    'trendDeviceDonut' => ['trendDeviceDonutLabels' => [], 'trendDeviceDonutData' => []],
+                    'totalTransactions' => 0,
+                    'totalManualTransactions' => 0,
+                    'totalQrisTransactions' => 0,
+                ]);
+            }
             Log::warning('Dashboard: No outlets found for current user. Returning empty data.');
             return view('admin.dashboard', compact(
                 'qrisBillingOutlets',
@@ -189,185 +209,235 @@ class DashboardController extends Controller
         };
 
 
-        // === 2. Data for Chart 1: Daily Transaction Amounts by Type (Area Chart) ===
-        // Menggunakan LOWER(type) untuk memastikan grouping case-insensitive
-        $transactionsForChartsQuery = Transaction::select(
-            DB::raw('DATE(created_at) as date'),
-            DB::raw('LOWER(type) as type_lower'), // Ubah di sini
-            DB::raw('SUM(amount) as total_amount')
-        )
-            ->where('status', 'success')
-            ->whereIn('outlet_id', $outletIds);
-
-        if ($startDate && $endDate) {
-            $transactionsForChartsQuery->whereBetween('created_at', [$startDate, $endDate]);
+        if ($request->boolean('load_charts')) {
+            // === 2. Data for Chart 1: Daily Transaction Amounts by Type (Area Chart) ===
+            // Menggunakan LOWER(type) untuk memastikan grouping case-insensitive
+            $transactionsForChartsQuery = Transaction::select(
+                DB::raw('DATE(created_at) as date'),
+                DB::raw('LOWER(type) as type_lower'), // Ubah di sini
+                DB::raw('SUM(amount) as total_amount')
+            )
+                ->where('status', 'success')
+                ->whereIn('outlet_id', $outletIds);
+    
+            if ($startDate && $endDate) {
+                $transactionsForChartsQuery->whereBetween('created_at', [$startDate, $endDate]);
+            }
+            $applyDeviceFilterToTransactions($transactionsForChartsQuery);
+            $transactionsForCharts = $transactionsForChartsQuery->groupBy(DB::raw('DATE(created_at)'), DB::raw('LOWER(type)')) // Ubah di sini
+                ->orderBy(DB::raw('DATE(created_at)'))
+                ->get();
+    
+            $dates = $transactionsForCharts->pluck('date')->unique()->sort()->values();
+            $categories = $dates->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))->toArray();
+            $transactionTypes = ['manual', 'qris', 'member']; // Tetap lowercase karena kita menggunakannya untuk membandingkan dengan type_lower
+    
+            $seriesData = [];
+            foreach ($transactionTypes as $type) {
+                $seriesData[$type] = $dates->map(
+                    fn($date) =>
+                    (int) optional(
+                        $transactionsForCharts->first(fn($t) => $t->date == $date && $t->type_lower == $type) // Ubah di sini
+                    )->total_amount
+                )->toArray();
+            }
+    
+            // === 3. Data for Chart 2: Donut Chart (Transaction Type Summary) ===
+            // Menggunakan CASE statement untuk pengelompokan yang konsisten dan case-insensitive
+            $transactionSummaryQuery = Transaction::select(
+                DB::raw("CASE
+                            WHEN LOWER(type) IN ('manual', 'kasir') THEN 'Kasir / Manual'
+                            WHEN LOWER(type) = 'qris' THEN 'QRIS'
+                            ELSE 'Lainnya' -- Untuk menangani tipe yang tidak terduga
+                        END as payment_category"),
+                DB::raw('COUNT(*) as total')
+            )
+                ->where('status', 'success')
+                ->whereIn('outlet_id', $outletIds);
+    
+            if ($startDate && $endDate) {
+                $transactionSummaryQuery->whereBetween('created_at', [$startDate, $endDate]);
+            }
+            $applyDeviceFilterToTransactions($transactionSummaryQuery);
+            $transactionSummary = $transactionSummaryQuery->groupBy('payment_category')->get(); // Group by the new category
+    
+            // Siapkan data untuk donut chart dengan urutan yang diinginkan dan kategori yang sudah dikonsolidasi
+            $donutLabels = [];
+            $donutData = [];
+            $expectedCategories = ['Kasir / Manual', 'QRIS'];
+    
+            foreach ($expectedCategories as $category) {
+                $count = $transactionSummary->firstWhere('payment_category', $category)->total ?? 0;
+                $donutLabels[] = $category;
+                $donutData[] = $count;
+            }
+    
+            // Tambahkan 'Lainnya' jika ada data yang masuk kategori ini
+            $lainnyaCount = $transactionSummary->firstWhere('payment_category', 'Lainnya')->total ?? 0;
+            if ($lainnyaCount > 0) {
+                $donutLabels[] = 'Lainnya';
+                $donutData[] = $lainnyaCount;
+            }
+    
+            // Total transaksi keseluruhan (untuk donut chart), harus konsisten
+            $totalTransactionsQuery = Transaction::query()
+                ->where('status', 'success')
+                ->whereIn('outlet_id', $outletIds);
+            if ($startDate && $endDate) {
+                $totalTransactionsQuery->whereBetween('created_at', [$startDate, $endDate]);
+            }
+            $applyDeviceFilterToTransactions($totalTransactionsQuery);
+            $totalTransactions = $totalTransactionsQuery->count();
+    
+            // Ambil total untuk setiap kategori, menggunakan kategori yang sudah dikonsolidasi
+            $totalManualTransactions = $transactionSummary->firstWhere('payment_category', 'Kasir / Manual')->total ?? 0; // Sesuaikan dengan kategori di CASE
+            $totalQrisTransactions = $transactionSummary->firstWhere('payment_category', 'QRIS')->total ?? 0;
+    
+            // === 4. Data for Chart 3: Donut Chart (Service Comparison: Washer vs Dryer) ===
+            $serviceTypesDbNames = ServiceType::pluck('name')->map(fn($name) => Str::snake($name))->toArray();
+    
+            $serviceComparisonQuery = DeviceTransaction::select('device_transactions.service_type', DB::raw('COUNT(*) as total'))
+                ->join('transactions', 'device_transactions.transaction_id', '=', 'transactions.id')
+                ->where('transactions.status', 'success')
+                ->whereIn('transactions.outlet_id', $outletIds)
+                ->whereIn('device_transactions.service_type', $serviceTypesDbNames);
+    
+            if ($startDate && $endDate) {
+                $serviceComparisonQuery->whereBetween('transactions.created_at', [$startDate, $endDate]);
+            }
+            if (!empty($selectedDeviceCodes)) {
+                $serviceComparisonQuery->whereIn('device_transactions.device_code', $selectedDeviceCodes);
+            }
+    
+            $serviceComparison = $serviceComparisonQuery->groupBy('device_transactions.service_type')->get();
+    
+            $serviceLabels = $serviceComparison->pluck('service_type')->toArray();
+            $serviceData = $serviceComparison->pluck('total')->map(fn($value) => (int) $value)->toArray();
+    
+            $totalServiceCounts = [];
+            foreach ($serviceTypesDbNames as $type) {
+                $totalServiceCounts[$type] = $serviceComparison->firstWhere('service_type', $type)->total ?? 0;
+            }
+    
+            // === Daily Device Usage (Washer vs Dryer) ===
+            $dailyDeviceUsageQuery = DeviceTransaction::select(
+                DB::raw('DATE(transactions.created_at) as date'),
+                DB::raw('LOWER(device_transactions.service_type) as service_type'),
+                DB::raw('COUNT(*) as total_transactions')
+            )
+                ->join('transactions', 'device_transactions.transaction_id', '=', 'transactions.id')
+                ->where('transactions.status', 'success')
+                ->whereIn('transactions.outlet_id', $outletIds);
+    
+            if ($startDate && $endDate) {
+                $dailyDeviceUsageQuery->whereBetween('transactions.created_at', [$startDate, $endDate]);
+            }
+            if (!empty($selectedDeviceCodes)) {
+                $dailyDeviceUsageQuery->whereIn('device_transactions.device_code', $selectedDeviceCodes);
+            }
+    
+            $dailyDeviceUsage = $dailyDeviceUsageQuery
+                ->groupBy(DB::raw('DATE(transactions.created_at)'), DB::raw('LOWER(device_transactions.service_type)'))
+                ->orderBy(DB::raw('DATE(transactions.created_at)'))
+                ->get();
+    
+            $dailyTransactionCategories = $dailyDeviceUsage->pluck('date')->unique()->sort()->values()
+                ->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))
+                ->toArray();
+    
+            $dailyWasherSeriesData = [];
+            $dailyDryerSeriesData = [];
+    
+            foreach ($dailyTransactionCategories as $date) {
+                $washerCount = $dailyDeviceUsage->first(function ($row) use ($date) {
+                    $rowDate = Carbon::parse($row->date)->format('Y-m-d');
+                    return $rowDate === $date && str_contains($row->service_type, 'washer');
+                })->total_transactions ?? 0;
+    
+                $dryerCount = $dailyDeviceUsage->first(function ($row) use ($date) {
+                    $rowDate = Carbon::parse($row->date)->format('Y-m-d');
+                    return $rowDate === $date && str_contains($row->service_type, 'dryer');
+                })->total_transactions ?? 0;
+    
+                $dailyWasherSeriesData[] = (int) $washerCount;
+                $dailyDryerSeriesData[] = (int) $dryerCount;
+            }
+    
+            // === NEW DATA FOR REVISION: Hourly Transaction Trend (Donut Chart) ===
+            $hourlyTransactionTrendQuery = Transaction::select(
+                DB::raw('HOUR(created_at) as hour'),
+                DB::raw('COUNT(*) as total_transactions')
+            )
+                ->where('status', 'success')
+                ->whereIn('outlet_id', $outletIds);
+    
+            if ($startDate && $endDate) {
+                $hourlyTransactionTrendQuery->whereBetween('created_at', [$startDate, $endDate]);
+            }
+            $applyDeviceFilterToTransactions($hourlyTransactionTrendQuery);
+    
+            $hourlyTransactionTrend = $hourlyTransactionTrendQuery->groupBy(DB::raw('HOUR(created_at)'))
+                ->orderBy('hour')
+                ->get();
+    
+            $hourlyLabels = [];
+            foreach ($hourlyTransactionTrend as $item) {
+                $hourlyLabels[] = sprintf('%02d:00', $item->hour);
+            }
+            $hourlyData = $hourlyTransactionTrend->pluck('total_transactions')->map(fn($value) => (int) $value)->toArray();
+    
+            // Call the new function to get multi-device chart data
+            $dataMultiDeviceChart = $this->dataMultiDeviceChart($startDate, $endDate, $outletIds, $selectedDeviceCodes);
+            $trendDeviceDonut = $this->trendDeviceDonut($startDate, $endDate, $outletIds, $selectedDeviceCodes);
+    
+            return response()->json([
+                'categories' => $categories,
+                'seriesData' => $seriesData,
+                'donutLabels' => $donutLabels,
+                'donutData' => $donutData,
+                'serviceLabels' => $serviceLabels,
+                'serviceData' => $serviceData,
+                'dailyTransactionCategories' => $dailyTransactionCategories,
+                'dailyWasherSeriesData' => $dailyWasherSeriesData,
+                'dailyDryerSeriesData' => $dailyDryerSeriesData,
+                'hourlyLabels' => $hourlyLabels,
+                'hourlyData' => $hourlyData,
+                'dataMultiDeviceChart' => $dataMultiDeviceChart,
+                'trendDeviceDonut' => $trendDeviceDonut,
+                'totalTransactions' => $totalTransactions,
+                'totalManualTransactions' => $totalManualTransactions,
+                'totalQrisTransactions' => $totalQrisTransactions,
+            ]);
         }
-        $applyDeviceFilterToTransactions($transactionsForChartsQuery);
-        $transactionsForCharts = $transactionsForChartsQuery->groupBy(DB::raw('DATE(created_at)'), DB::raw('LOWER(type)')) // Ubah di sini
-            ->orderBy(DB::raw('DATE(created_at)'))
-            ->get();
 
-        $dates = $transactionsForCharts->pluck('date')->unique()->sort()->values();
-        $categories = $dates->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))->toArray();
-        $transactionTypes = ['manual', 'qris', 'member']; // Tetap lowercase karena kita menggunakannya untuk membandingkan dengan type_lower
-
-        $seriesData = [];
-        foreach ($transactionTypes as $type) {
-            $seriesData[$type] = $dates->map(
-                fn($date) =>
-                (int) optional(
-                    $transactionsForCharts->first(fn($t) => $t->date == $date && $t->type_lower == $type) // Ubah di sini
-                )->total_amount
-            )->toArray();
-        }
-
-        // === 3. Data for Chart 2: Donut Chart (Transaction Type Summary) ===
-        // Menggunakan CASE statement untuk pengelompokan yang konsisten dan case-insensitive
-        $transactionSummaryQuery = Transaction::select(
-            DB::raw("CASE
-                        WHEN LOWER(type) IN ('manual', 'kasir') THEN 'Kasir / Manual'
-                        WHEN LOWER(type) = 'qris' THEN 'QRIS'
-                        ELSE 'Lainnya' -- Untuk menangani tipe yang tidak terduga
-                    END as payment_category"),
-            DB::raw('COUNT(*) as total')
-        )
-            ->where('status', 'success')
-            ->whereIn('outlet_id', $outletIds);
-
-        if ($startDate && $endDate) {
-            $transactionSummaryQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        $applyDeviceFilterToTransactions($transactionSummaryQuery);
-        $transactionSummary = $transactionSummaryQuery->groupBy('payment_category')->get(); // Group by the new category
-
-        // Siapkan data untuk donut chart dengan urutan yang diinginkan dan kategori yang sudah dikonsolidasi
+        // Chart data sengaja dikosongkan pada request HTML awal.
+        // Browser akan memuatnya melalui request async ke route dashboard yang sama.
+        $categories = [];
+        $seriesData = ['manual' => [], 'qris' => [], 'member' => []];
         $donutLabels = [];
         $donutData = [];
-        $expectedCategories = ['Kasir / Manual', 'QRIS'];
-
-        foreach ($expectedCategories as $category) {
-            $count = $transactionSummary->firstWhere('payment_category', $category)->total ?? 0;
-            $donutLabels[] = $category;
-            $donutData[] = $count;
-        }
-
-        // Tambahkan 'Lainnya' jika ada data yang masuk kategori ini
-        $lainnyaCount = $transactionSummary->firstWhere('payment_category', 'Lainnya')->total ?? 0;
-        if ($lainnyaCount > 0) {
-            $donutLabels[] = 'Lainnya';
-            $donutData[] = $lainnyaCount;
-        }
-
-        // Total transaksi keseluruhan (untuk donut chart), harus konsisten
-        $totalTransactionsQuery = Transaction::query()
-            ->where('status', 'success')
-            ->whereIn('outlet_id', $outletIds);
-        if ($startDate && $endDate) {
-            $totalTransactionsQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        $applyDeviceFilterToTransactions($totalTransactionsQuery);
-        $totalTransactions = $totalTransactionsQuery->count();
-
-        // Ambil total untuk setiap kategori, menggunakan kategori yang sudah dikonsolidasi
-        $totalManualTransactions = $transactionSummary->firstWhere('payment_category', 'Kasir / Manual')->total ?? 0; // Sesuaikan dengan kategori di CASE
-        $totalQrisTransactions = $transactionSummary->firstWhere('payment_category', 'QRIS')->total ?? 0;
-
-        // === 4. Data for Chart 3: Donut Chart (Service Comparison: Washer vs Dryer) ===
-        $serviceTypesDbNames = ServiceType::pluck('name')->map(fn($name) => Str::snake($name))->toArray();
-
-        $serviceComparisonQuery = DeviceTransaction::select('device_transactions.service_type', DB::raw('COUNT(*) as total'))
-            ->join('transactions', 'device_transactions.transaction_id', '=', 'transactions.id')
-            ->where('transactions.status', 'success')
-            ->whereIn('transactions.outlet_id', $outletIds)
-            ->whereIn('device_transactions.service_type', $serviceTypesDbNames);
-
-        if ($startDate && $endDate) {
-            $serviceComparisonQuery->whereBetween('transactions.created_at', [$startDate, $endDate]);
-        }
-        if (!empty($selectedDeviceCodes)) {
-            $serviceComparisonQuery->whereIn('device_transactions.device_code', $selectedDeviceCodes);
-        }
-
-        $serviceComparison = $serviceComparisonQuery->groupBy('device_transactions.service_type')->get();
-
-        $serviceLabels = $serviceComparison->pluck('service_type')->toArray();
-        $serviceData = $serviceComparison->pluck('total')->map(fn($value) => (int) $value)->toArray();
-
+        $serviceLabels = [];
+        $serviceData = [];
+        $totalTransactions = 0;
+        $totalManualTransactions = 0;
+        $totalQrisTransactions = 0;
+        $serviceTypesDbNames = [];
         $totalServiceCounts = [];
-        foreach ($serviceTypesDbNames as $type) {
-            $totalServiceCounts[$type] = $serviceComparison->firstWhere('service_type', $type)->total ?? 0;
-        }
-
-        // === Daily Device Usage (Washer vs Dryer) ===
-        $dailyDeviceUsageQuery = DeviceTransaction::select(
-            DB::raw('DATE(transactions.created_at) as date'),
-            DB::raw('LOWER(device_transactions.service_type) as service_type'),
-            DB::raw('COUNT(*) as total_transactions')
-        )
-            ->join('transactions', 'device_transactions.transaction_id', '=', 'transactions.id')
-            ->where('transactions.status', 'success')
-            ->whereIn('transactions.outlet_id', $outletIds);
-
-        if ($startDate && $endDate) {
-            $dailyDeviceUsageQuery->whereBetween('transactions.created_at', [$startDate, $endDate]);
-        }
-        if (!empty($selectedDeviceCodes)) {
-            $dailyDeviceUsageQuery->whereIn('device_transactions.device_code', $selectedDeviceCodes);
-        }
-
-        $dailyDeviceUsage = $dailyDeviceUsageQuery
-            ->groupBy(DB::raw('DATE(transactions.created_at)'), DB::raw('LOWER(device_transactions.service_type)'))
-            ->orderBy(DB::raw('DATE(transactions.created_at)'))
-            ->get();
-
-        $dailyTransactionCategories = $dailyDeviceUsage->pluck('date')->unique()->sort()->values()
-            ->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))
-            ->toArray();
-
+        $dailyTransactionCategories = [];
         $dailyWasherSeriesData = [];
         $dailyDryerSeriesData = [];
-
-        foreach ($dailyTransactionCategories as $date) {
-            $washerCount = $dailyDeviceUsage->first(function ($row) use ($date) {
-                $rowDate = Carbon::parse($row->date)->format('Y-m-d');
-                return $rowDate === $date && str_contains($row->service_type, 'washer');
-            })->total_transactions ?? 0;
-
-            $dryerCount = $dailyDeviceUsage->first(function ($row) use ($date) {
-                $rowDate = Carbon::parse($row->date)->format('Y-m-d');
-                return $rowDate === $date && str_contains($row->service_type, 'dryer');
-            })->total_transactions ?? 0;
-
-            $dailyWasherSeriesData[] = (int) $washerCount;
-            $dailyDryerSeriesData[] = (int) $dryerCount;
-        }
-
-        // === NEW DATA FOR REVISION: Hourly Transaction Trend (Donut Chart) ===
-        $hourlyTransactionTrendQuery = Transaction::select(
-            DB::raw('HOUR(created_at) as hour'),
-            DB::raw('COUNT(*) as total_transactions')
-        )
-            ->where('status', 'success')
-            ->whereIn('outlet_id', $outletIds);
-
-        if ($startDate && $endDate) {
-            $hourlyTransactionTrendQuery->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        $applyDeviceFilterToTransactions($hourlyTransactionTrendQuery);
-
-        $hourlyTransactionTrend = $hourlyTransactionTrendQuery->groupBy(DB::raw('HOUR(created_at)'))
-            ->orderBy('hour')
-            ->get();
-
         $hourlyLabels = [];
-        foreach ($hourlyTransactionTrend as $item) {
-            $hourlyLabels[] = sprintf('%02d:00', $item->hour);
-        }
-        $hourlyData = $hourlyTransactionTrend->pluck('total_transactions')->map(fn($value) => (int) $value)->toArray();
-
-        // Call the new function to get multi-device chart data
-        $dataMultiDeviceChart = $this->dataMultiDeviceChart($startDate, $endDate, $outletIds, $selectedDeviceCodes);
-        $trendDeviceDonut = $this->trendDeviceDonut($startDate, $endDate, $outletIds, $selectedDeviceCodes);
+        $hourlyData = [];
+        $dataMultiDeviceChart = [
+            'multiDeviceChartCategories' => [],
+            'multiDeviceChartSeriesData' => [],
+            'multiDeviceChartTopSeriesData' => [],
+            'multiDeviceChartBottomSeriesData' => [],
+        ];
+        $trendDeviceDonut = [
+            'trendDeviceDonutLabels' => [],
+            'trendDeviceDonutData' => [],
+        ];
 
         $totalMembers = Member::count();
         $totalDevices = Device::count();
