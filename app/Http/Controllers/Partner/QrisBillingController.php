@@ -83,7 +83,7 @@ class QrisBillingController extends Controller
                     'first_name' => mb_substr((string) $outlet->outlet_name, 0, 50),
                 ],
             ];
-            \\Illuminate\\Support\\Facades\\Log::info('QRIS billing Midtrans VA request.', [
+            \Illuminate\Support\Facades\Log::info('QRIS billing Midtrans VA request.', [
                 'environment' => $environment,
                 'url' => $baseUrl . '/v2/charge',
                 'outlet_id' => $outlet->id,
@@ -108,6 +108,7 @@ class QrisBillingController extends Controller
             // Catat respons gateway agar format VA yang tidak terduga bisa ditelusuri.
             // Jangan log Server Key atau request Authorization.
             \Illuminate\Support\Facades\Log::info('QRIS billing Midtrans VA response.', [
+                'environment' => 'sandbox',
                 'outlet_id' => $outlet->id,
                 'payment_id' => $payment->id,
                 'http_status' => $response->status(),
