@@ -133,13 +133,27 @@ class DashboardController extends Controller
         $rankCandidateDeviceCodes = !empty($manuallySelectedDeviceCodes)
             ? $manuallySelectedDeviceCodes
             : Device::whereIn('outlet_id', $outletIds)->orderBy('code')->pluck('code')->toArray();
-        $selectedDeviceCodes = $this->rankDeviceCodes(
-            $startDate,
-            $endDate,
-            $outletIds,
-            $rankCandidateDeviceCodes,
-            $selectedDeviceRank
-        );
+        // Untuk request grafik async, gunakan ranking device yang sudah dihitung
+        // saat halaman awal dirender. Validasi ulang agar kode hanya dari kandidat yang diizinkan.
+        if ($request->boolean('load_charts') && $request->has('ranked_devices')) {
+            $rankedDeviceInput = $request->input('ranked_devices', '[]');
+            if (is_string($rankedDeviceInput)) {
+                $rankedDeviceInput = json_decode($rankedDeviceInput, true);
+            }
+
+            $selectedDeviceCodes = array_slice(array_values(array_intersect(
+                array_values(array_unique(array_map('strval', (array) ($rankedDeviceInput ?? [])))),
+                $rankCandidateDeviceCodes
+            )), 0, 10);
+        } else {
+            $selectedDeviceCodes = $this->rankDeviceCodes(
+                $startDate,
+                $endDate,
+                $outletIds,
+                $rankCandidateDeviceCodes,
+                $selectedDeviceRank
+            );
+        }
 
         if (empty($outletIds)) {
             if ($request->boolean('load_charts')) {
@@ -208,6 +222,175 @@ class DashboardController extends Controller
             }
         };
 
+
+        if ($request->boolean('load_charts') && $request->filled('chart')) {
+            $requestedChart = (string) $request->input('chart');
+
+            switch ($requestedChart) {
+                case 'hourly':
+                    $hourlyQuery = Transaction::select(
+                        DB::raw('HOUR(created_at) as hour'),
+                        DB::raw('COUNT(*) as total_transactions')
+                    )
+                        ->where('status', 'success')
+                        ->whereIn('outlet_id', $outletIds);
+
+                    if ($startDate && $endDate) {
+                        $hourlyQuery->whereBetween('created_at', [$startDate, $endDate]);
+                    }
+                    $applyDeviceFilterToTransactions($hourlyQuery);
+
+                    $hourlyRows = $hourlyQuery->groupBy(DB::raw('HOUR(created_at)'))
+                        ->orderBy('hour')
+                        ->get();
+
+                    return response()->json([
+                        'hourlyLabels' => $hourlyRows->map(fn ($item) => sprintf('%02d:00', $item->hour))->values()->toArray(),
+                        'hourlyData' => $hourlyRows->pluck('total_transactions')->map(fn ($value) => (int) $value)->toArray(),
+                    ]);
+
+                case 'transactions':
+                    $transactionsQuery = Transaction::select(
+                        DB::raw('DATE(created_at) as date'),
+                        DB::raw('LOWER(type) as type_lower'),
+                        DB::raw('SUM(amount) as total_amount')
+                    )
+                        ->where('status', 'success')
+                        ->whereIn('outlet_id', $outletIds);
+
+                    if ($startDate && $endDate) {
+                        $transactionsQuery->whereBetween('created_at', [$startDate, $endDate]);
+                    }
+                    $applyDeviceFilterToTransactions($transactionsQuery);
+
+                    $transactions = $transactionsQuery
+                        ->groupBy(DB::raw('DATE(created_at)'), DB::raw('LOWER(type)'))
+                        ->orderBy(DB::raw('DATE(created_at)'))
+                        ->get();
+
+                    $dates = $transactions->pluck('date')->unique()->sort()->values();
+                    $categories = $dates->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))->toArray();
+                    $seriesData = [];
+
+                    foreach (['manual', 'qris', 'member'] as $type) {
+                        $seriesData[$type] = $dates->map(function ($date) use ($transactions, $type) {
+                            $row = $transactions->first(fn ($item) => $item->date == $date && $item->type_lower == $type);
+                            return (int) ($row->total_amount ?? 0);
+                        })->toArray();
+                    }
+
+                    $summaryQuery = Transaction::select(
+                        DB::raw("CASE
+                            WHEN LOWER(type) IN ('manual', 'kasir') THEN 'Kasir / Manual'
+                            WHEN LOWER(type) = 'qris' THEN 'QRIS'
+                            ELSE 'Lainnya'
+                        END as payment_category"),
+                        DB::raw('COUNT(*) as total')
+                    )
+                        ->where('status', 'success')
+                        ->whereIn('outlet_id', $outletIds);
+
+                    if ($startDate && $endDate) {
+                        $summaryQuery->whereBetween('created_at', [$startDate, $endDate]);
+                    }
+                    $applyDeviceFilterToTransactions($summaryQuery);
+                    $summary = $summaryQuery->groupBy('payment_category')->get();
+
+                    $donutLabels = ['Kasir / Manual', 'QRIS'];
+                    $donutData = [
+                        (int) ($summary->firstWhere('payment_category', 'Kasir / Manual')->total ?? 0),
+                        (int) ($summary->firstWhere('payment_category', 'QRIS')->total ?? 0),
+                    ];
+                    $otherCount = (int) ($summary->firstWhere('payment_category', 'Lainnya')->total ?? 0);
+                    if ($otherCount > 0) {
+                        $donutLabels[] = 'Lainnya';
+                        $donutData[] = $otherCount;
+                    }
+
+                    return response()->json([
+                        'categories' => $categories,
+                        'seriesData' => $seriesData,
+                        'donutLabels' => $donutLabels,
+                        'donutData' => $donutData,
+                        'totalTransactions' => (int) $summary->sum('total'),
+                        'totalManualTransactions' => (int) ($summary->firstWhere('payment_category', 'Kasir / Manual')->total ?? 0),
+                        'totalQrisTransactions' => (int) ($summary->firstWhere('payment_category', 'QRIS')->total ?? 0),
+                    ]);
+
+                case 'daily':
+                    $dailyQuery = DeviceTransaction::select(
+                        DB::raw('DATE(transactions.created_at) as date'),
+                        DB::raw('LOWER(device_transactions.service_type) as service_type'),
+                        DB::raw('COUNT(*) as total_transactions')
+                    )
+                        ->join('transactions', 'device_transactions.transaction_id', '=', 'transactions.id')
+                        ->where('transactions.status', 'success')
+                        ->whereIn('transactions.outlet_id', $outletIds);
+
+                    if ($startDate && $endDate) {
+                        $dailyQuery->whereBetween('transactions.created_at', [$startDate, $endDate]);
+                    }
+                    if (!empty($selectedDeviceCodes)) {
+                        $dailyQuery->whereIn('device_transactions.device_code', $selectedDeviceCodes);
+                    }
+
+                    $dailyRows = $dailyQuery
+                        ->groupBy(DB::raw('DATE(transactions.created_at)'), DB::raw('LOWER(device_transactions.service_type)'))
+                        ->orderBy(DB::raw('DATE(transactions.created_at)'))
+                        ->get();
+
+                    $dailyCategories = $dailyRows->pluck('date')->unique()->sort()->values()
+                        ->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))
+                        ->toArray();
+                    $washerData = [];
+                    $dryerData = [];
+
+                    foreach ($dailyCategories as $date) {
+                        $washer = $dailyRows->first(function ($row) use ($date) {
+                            return Carbon::parse($row->date)->format('Y-m-d') === $date
+                                && str_contains($row->service_type, 'washer');
+                        });
+                        $dryer = $dailyRows->first(function ($row) use ($date) {
+                            return Carbon::parse($row->date)->format('Y-m-d') === $date
+                                && str_contains($row->service_type, 'dryer');
+                        });
+
+                        $washerData[] = (int) ($washer->total_transactions ?? 0);
+                        $dryerData[] = (int) ($dryer->total_transactions ?? 0);
+                    }
+
+                    return response()->json([
+                        'dailyTransactionCategories' => $dailyCategories,
+                        'dailyWasherSeriesData' => $washerData,
+                        'dailyDryerSeriesData' => $dryerData,
+                    ]);
+
+                case 'device-trend':
+                    return response()->json([
+                        'trendDeviceDonut' => $this->trendDeviceDonut(
+                            $startDate,
+                            $endDate,
+                            $outletIds,
+                            $selectedDeviceCodes
+                        ),
+                    ]);
+
+                case 'multi-device':
+                    return response()->json([
+                        'dataMultiDeviceChart' => $this->dataMultiDeviceChart(
+                            $startDate,
+                            $endDate,
+                            $outletIds,
+                            $selectedDeviceCodes
+                        ),
+                    ]);
+
+                default:
+                    return response()->json([
+                        'message' => 'Grafik dashboard tidak dikenal.',
+                    ], 422);
+            }
+        }
 
         if ($request->boolean('load_charts')) {
             // === 2. Data for Chart 1: Daily Transaction Amounts by Type (Area Chart) ===
