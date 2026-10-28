@@ -6,21 +6,21 @@
 @if(session('error'))<div class="alert alert-danger">{{ session('error') }}</div>@endif
 <div class="row"><div class="col-md-5"><div class="card border-0 shadow-sm rounded-4 mb-4"><div class="card-body p-4">
 <div class="d-flex align-items-center gap-3 mb-4"><div class="bg-primary-transparent-1 text-primary p-3 rounded-circle"><i class="fa fa-store fa-2x"></i></div><div><h4 class="mb-0">{{ $outlet->outlet_name }}</h4><span class="text-muted small">ID: {{ $outlet->code }}</span></div></div>
-<div class="p-3 bg-light rounded-3 mb-4"><div class="row text-center"><div class="col-6 border-end"><div class="text-muted small mb-1">Periode</div><div class="fw-bold text-dark">{{ $outlet->billing_period }}</div></div><div class="col-6"><div class="text-muted small mb-1">Status</div>@php $statusClass=['paid'=>'success','pending'=>'warning text-dark','due'=>'danger','prepay'=>'warning text-dark','not_due'=>'info'][$outlet->billing_status]??'secondary';$statusLabel=['paid'=>'Aktif','pending'=>'Menunggu Verifikasi','due'=>'Perlu Perpanjangan','prepay'=>'Bisa Bayar Lebih Awal','not_due'=>'Aktif'][$outlet->billing_status]??ucfirst($outlet->billing_status); @endphp<span class="badge bg-{{ $statusClass }}">{{ $statusLabel }}</span></div></div></div>
-<div class="mb-4"><div class="text-muted small mb-1">Total yang harus dibayar</div><div class="display-6 fw-bold text-primary">Rp {{ number_format($outlet->billing_amount,0,',','.') }}</div>@if($outlet->billing_due_date)<div class="text-muted small mt-1">Aktif sampai: <span class="fw-bold">{{ $outlet->billing_due_date->format('d/m/Y') }}</span></div>@endif</div>
+<div class="p-3 bg-light rounded-3 mb-4"><div class="row text-center"><div class="col-6 border-end"><div class="text-muted small mb-1">Periode</div><div class="fw-bold text-dark">{{ $outlet->billing_period }}</div></div><div class="col-6"><div class="text-muted small mb-1">Status</div>@php $statusClass=['paid'=>'success','pending'=>'warning text-dark','due'=>'danger','prepay'=>'warning text-dark','not_due'=>'info'][$outlet->billing_status]??'secondary';$statusLabel=['paid'=>'Aktif','pending'=>'Menunggu Verifikasi','due'=>'Perlu Perpanjangan','prepay'=>'Bisa Bayar Lebih Awal','not_due'=>'Aktif'][$outlet->billing_status]??ucfirst($outlet->billing_status); @endphp<span id="qris-billing-status" class="badge bg-{{ $statusClass }}">{{ $statusLabel }}</span></div></div></div>
+<div class="mb-4"><div class="text-muted small mb-1">Total yang harus dibayar</div><div class="display-6 fw-bold text-primary">Rp {{ number_format($outlet->billing_amount,0,',','.') }}</div>@if($outlet->billing_due_date)<div class="text-muted small mt-1">Aktif sampai: <span id="qris-billing-due-date" class="fw-bold">{{ $outlet->billing_due_date->format('d/m/Y') }}</span></div>@endif</div>
 @if($outlet->billing_status==='prepay')<div class="alert alert-warning"><i class="fa fa-clock me-1"></i> Pembayaran sudah dibuka lebih awal. Jika dibayar sekarang, masa aktif tetap dihitung dari tanggal aktif sampai saat ini, bukan dari tanggal pembayaran.</div>@endif
 @if(!empty($outlet->billing_unpaid_periods))<div class="mb-4"><div class="text-muted small fw-bold text-uppercase mb-2">Rincian Bulan</div><div class="border rounded overflow-hidden">@foreach($outlet->billing_unpaid_periods as $item)<div class="d-flex justify-content-between px-3 py-2 {{ !$loop->last?'border-bottom':'' }}"><div class="fw-bold">{{ \Carbon\Carbon::createFromFormat('Y-m',$item['period'])->translatedFormat('F Y') }}</div><div class="fw-bold">Rp {{ number_format($item['amount'],0,',','.') }}</div></div>@endforeach</div></div>@endif
-<div class="alert alert-info border-0 shadow-none mb-0"><h6 class="alert-heading fw-bold mb-2"><i class="fa fa-info-circle me-1"></i> Pembayaran Virtual Account</h6><p class="small mb-0">Pilih bank pada panel pembayaran. Nomor Virtual Account akan dibuat otomatis sesuai tagihan. Bayar menggunakan nomor VA tersebut sebelum batas waktu berakhir; status akan diperbarui setelah Midtrans mengonfirmasi pembayaran.</p></div>
+<div id="qris-va-general-instructions" class="alert alert-info border-0 shadow-none mb-0"><h6 class="alert-heading fw-bold mb-2"><i class="fa fa-info-circle me-1"></i> Pembayaran Virtual Account</h6><p class="small mb-0">Pilih bank pada panel pembayaran. Nomor Virtual Account akan dibuat otomatis sesuai tagihan. Bayar menggunakan nomor VA tersebut sebelum batas waktu berakhir; status akan diperbarui setelah Midtrans mengonfirmasi pembayaran.</p></div>
 </div></div></div>
 <div class="col-md-7"><div class="card border-0 shadow-sm rounded-4 h-100"><div class="card-body p-4">
 @if($outlet->billing_status==='paid')<div class="text-center py-5"><div class="text-success mb-3"><i class="fa fa-check-circle fa-5x"></i></div><h3>QRIS Aktif</h3><p class="text-muted">Terima kasih. Perpanjangan QRIS telah dikonfirmasi oleh administrator.</p>@if($outlet->billing_payment?->paid_at)<div class="badge bg-light text-dark p-2 border">Diaktifkan pada: {{ $outlet->billing_payment->paid_at->format('d/m/Y H:i') }}</div>@endif</div>
 @elseif($outlet->billing_status==='pending')
     @if($outlet->billing_payment?->payment_method === 'virtual_account')
-        <div class="text-center py-4">
+        <div id="qris-va-pending-view" class="text-center py-4">
             <div class="text-primary mb-3"><i class="fa fa-university fa-4x"></i></div>
             <h3>Virtual Account Menunggu Pembayaran</h3>
             <p class="text-muted">Selesaikan pembayaran melalui bank sebelum batas waktu berakhir.</p>
-            <div class="border rounded-3 p-4 text-start mt-3">
+            <div id="qris-va-payment-panel" class="border rounded-3 p-4 text-start mt-3">
                 <div class="text-muted small">Bank</div><div class="fw-bold mb-3">{{ strtoupper($outlet->billing_payment->va_bank ?? '-') }}</div>
                 <div class="text-muted small">Nomor Virtual Account</div>
                 <div class="d-flex align-items-center gap-2 mb-3">
@@ -35,12 +35,71 @@
                     <script>
                     (function () {
                         const expiryIso = @json($outlet->billing_payment->expires_at->toIso8601String());
+                        const statusUrl = @json(route('partner.qris-billing.payment.status', $outlet->billing_payment));
                         const expiryTimestamp = Date.parse(expiryIso);
                         const countdown = document.getElementById('qris-va-countdown');
-                        if (!Number.isFinite(expiryTimestamp) || !countdown) return;
-
+                        const pendingView = document.getElementById('qris-va-pending-view');
                         let reloadStarted = false;
+                        let paymentResolved = false;
+
+                        function showPaidState(data) {
+                            paymentResolved = true;
+                            if (countdown) countdown.classList.add('d-none');
+
+                            const statusBadge = document.getElementById('qris-billing-status');
+                            if (statusBadge) {
+                                statusBadge.className = 'badge bg-success';
+                                statusBadge.textContent = 'Aktif';
+                            }
+
+                            const dueDate = document.getElementById('qris-billing-due-date');
+                            if (dueDate && data.period_end) {
+                                dueDate.textContent = new Date(data.period_end + 'T12:00:00').toLocaleDateString('id-ID');
+                            }
+
+                            const instructions = document.getElementById('qris-va-general-instructions');
+                            if (instructions) instructions.classList.add('d-none');
+
+                            if (pendingView) {
+                                pendingView.innerHTML = '<div class="text-success mb-3"><i class="fa fa-check-circle fa-5x"></i></div>'
+                                    + '<h3>Pembayaran Berhasil!</h3>'
+                                    + '<p class="text-muted">Pembayaran VA sudah dikonfirmasi. Masa aktif outlet berhasil diperbarui.</p>'
+                                    + (data.paid_at
+                                        ? '<div class="badge bg-light text-dark p-2 border">Dikonfirmasi pada: '
+                                            + new Date(data.paid_at).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+                                            + '</div>'
+                                        : '');
+                            }
+                        }
+
+                        async function checkPaymentStatus() {
+                            if (paymentResolved) return;
+                            try {
+                                const response = await fetch(statusUrl, {
+                                    method: 'GET',
+                                    headers: { Accept: 'application/json' },
+                                    cache: 'no-store',
+                                });
+                                if (response.ok) {
+                                    const data = await response.json();
+                                    if (data.status === 'paid') {
+                                        showPaidState(data);
+                                        return;
+                                    }
+                                    if (['expired', 'failed', 'cancelled', 'canceled'].includes(data.status)) {
+                                        window.location.reload();
+                                        return;
+                                    }
+                                }
+                            } catch (error) {
+                                // Kegagalan polling sementara tidak mengganggu countdown.
+                            }
+                            if (!paymentResolved) window.setTimeout(checkPaymentStatus, 2000);
+                        }
+
                         function refreshVaExpiry() {
+                            if (paymentResolved) return;
+                            if (!Number.isFinite(expiryTimestamp) || !countdown) return;
                             const remaining = expiryTimestamp - Date.now();
                             if (remaining <= 0) {
                                 if (!reloadStarted) {
@@ -60,6 +119,7 @@
                             window.setTimeout(refreshVaExpiry, 1000);
                         }
 
+                        checkPaymentStatus();
                         refreshVaExpiry();
                     })();
                     </script>
