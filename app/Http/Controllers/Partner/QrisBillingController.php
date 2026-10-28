@@ -84,9 +84,9 @@ class QrisBillingController extends Controller
                 'customer_details' => [
                     'first_name' => mb_substr((string) $outlet->outlet_name, 0, 50),
                 ],
-                // Masa berlaku Sandbox hanya 1 menit.
+                // Masa berlaku Virtual Account Sandbox: 3 menit.
                 'custom_expiry' => [
-                    'expiry_duration' => 1,
+                    'expiry_duration' => 3,
                     'unit' => 'minute',
                 ],
             ];
@@ -160,7 +160,7 @@ class QrisBillingController extends Controller
                 'gateway_transaction_id' => data_get($result, 'transaction_id'),
                 'expires_at' => data_get($result, 'expiry_time')
                     ? \Carbon\Carbon::parse(data_get($result, 'expiry_time'))
-                    : now()->addMinute(),
+                    : now()->addMinutes(3),
             ]);
         } catch (\Throwable $e) {
             $payment->update(['status' => 'failed']);
