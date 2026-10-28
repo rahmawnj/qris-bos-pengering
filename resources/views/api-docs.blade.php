@@ -229,6 +229,30 @@
                         window.alert('Body JSON belum valid: ' + error.message);
                     }
                 },
+                async submitSelectedBillingPaymentAsSuccess() {
+                    const payment = this.billingPayments.find((item) => String(item.id) === String(this.selectedBillingPaymentId));
+                    const tester = this.testers['virtual-account-callback-test'];
+
+                    if (!payment || !tester) {
+                        window.alert('Pilih transaksi VA billing terlebih dahulu.');
+                        return;
+                    }
+
+                    try {
+                        const body = tester.body.trim() ? JSON.parse(tester.body) : {};
+                        body.payment_id = payment.id;
+                        body.transaction_status = 'settlement';
+                        body.fraud_status = 'accept';
+                        delete body.order_id;
+                        delete body.gross_amount;
+                        tester.body = JSON.stringify(body, null, 2);
+
+                        this.activeTab = 'virtual-account-callback-test';
+                        await this.submitTester();
+                    } catch (error) {
+                        window.alert('Body JSON belum valid: ' + error.message);
+                    }
+                },
                 async submitTester() {
                     const tester = this.tester;
 
@@ -1187,7 +1211,18 @@
                                 </template>
                             </select>
                         </label>
-                        <p class="text-xs text-emerald-900/80">Setelah memilih transaksi, playground otomatis memakai ID pembayaran dan nominal asli dari database. Kamu tetap bisa memilih status callback di Body JSON.</p>
+                        <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+                            <button type="button"
+                                    @click="submitSelectedBillingPaymentAsSuccess()"
+                                    :disabled="!selectedBillingPaymentId || billingPaymentsLoading || testers['virtual-account-callback-test'].loading"
+                                    class="inline-flex items-center justify-center gap-2 rounded-lg bg-emerald-700 hover:bg-emerald-800 px-4 py-3 text-sm font-bold text-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                                </svg>
+                                <span x-text="testers['virtual-account-callback-test'].loading ? 'Mengirim callback...' : 'Kirim Callback Sukses'"></span>
+                            </button>
+                            <p class="text-xs text-emerald-900/80">Tombol ini otomatis mengatur status ke <code class="bg-emerald-100 px-1 rounded">settlement</code> dan mengirim callback untuk transaksi yang dipilih. Status pembayaran dan masa aktif outlet dapat berubah.</p>
+                        </div>
                     </div>
 
                     <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-5 space-y-2">
