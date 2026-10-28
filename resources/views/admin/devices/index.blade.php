@@ -102,17 +102,12 @@
                 }],
                 buttons: fullExportButtons({
                     title: 'Daftar Device',
+                    url: '{{ route('admin.devices.index', ['export' => 1]) }}',
                     columns: [
-                        { title: '#', data: 'number', source: 0 },
-                        { title: 'Brand', data: 'brand', source: 1 },
-                        { title: 'Device', data: 'device', source: 2 },
-                        {
-                            title: 'Status',
-                            data: 'status',
-                            source: function(row) {
-                                return $('<div>').html(row[3]).find('option:selected').text().trim();
-                            }
-                        }
+                        { title: '#', data: 'number' },
+                        { title: 'Brand', data: 'brand_text' },
+                        { title: 'Device', data: 'device_text' },
+                        { title: 'Status', data: 'status_text' }
                     ],
                     error: showDataTableError
                 })
@@ -162,7 +157,7 @@
                 }
             });
 
-            $('#data-table').on('change', '.device-status-select', function() {            $('#data-table').on('change', '.device-status-select', function() {
+            $('#data-table').on('change', '.device-status-select', function() {
                 var newStatus = $(this).val();
                 var deviceId = $(this).data('device-id');
                 var originalStatus = $(this).data('original');
