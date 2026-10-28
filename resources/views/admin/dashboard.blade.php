@@ -484,102 +484,195 @@
                 element.classList.add('dashboard-chart-loading');
             });
 
-            const chartUrl = new URL(window.location.href);
-            chartUrl.searchParams.set('load_charts', '1');
+            const selectedDeviceCodes = @json(array_values($selectedDeviceCodes ?? []));
+            const baseUrl = new URL(window.location.href);
+            const baseOptions = {
+                chart: {
+                    toolbar: { show: false },
+                    animations: { enabled: false },
+                    fontFamily: 'inherit'
+                },
+                noData: { text: 'Belum ada data' }
+            };
+            const colors = ['#348fe2', '#00acac', '#f59c1a'];
 
-            fetch(chartUrl.toString(), {
-                headers: { 'X-Requested-With': 'XMLHttpRequest', 'Accept': 'application/json' },
-                credentials: 'same-origin'
-            })
-            .then(function (response) {
-                if (!response.ok) throw new Error('Gagal memuat data dashboard (' + response.status + ')');
-                return response.json();
-            })
-            .then(function (data) {
-                chartElements.forEach(function (element) {
-                    element.classList.remove('dashboard-chart-loading');
-                });
-                const makeChart = function (id, options) {
+            function renderChart(id, options) {
+                const element = document.getElementById(id);
+                if (!element || typeof ApexCharts === 'undefined') {
+                    return Promise.resolve();
+                }
+
+                element.innerHTML = '';
+                return Promise.resolve(new ApexCharts(element, options).render());
+            }
+
+            function markChartGroupFailed(ids) {
+                ids.forEach(function (id) {
                     const element = document.getElementById(id);
-                    if (!element || typeof ApexCharts === 'undefined') return;
-                    element.innerHTML = '';
-                    const chart = new ApexCharts(element, options);
-                    chart.render();
-                };
-                const base = { chart: { toolbar: { show: false }, animations: { enabled: false }, fontFamily: 'inherit' }, noData: { text: 'Belum ada data' } };
-                const colors = ['#348fe2', '#00acac', '#f59c1a'];
-
-                makeChart('category-line', {
-                    ...base, chart: { ...base.chart, type: 'area', height: 260, stacked: false },
-                    series: [
-                        { name: 'Manual', data: (data.seriesData && data.seriesData.manual || []) },
-                        { name: 'QRIS', data: (data.seriesData && data.seriesData.qris || []) },
-                        { name: 'Member', data: (data.seriesData && data.seriesData.member || []) }
-                    ],
-                    xaxis: { categories: data.categories || [] }, colors: colors,
-                    dataLabels: { enabled: false }, stroke: { curve: 'smooth', width: 2 },
-                    fill: { type: 'gradient', gradient: { opacityFrom: .35, opacityTo: .05 } }
-                });
-                makeChart('perbandingan-donut', {
-                    ...base, chart: { ...base.chart, type: 'donut', height: 180 },
-                    labels: data.donutLabels || [], series: data.donutData || [],
-                    legend: { position: 'bottom' }, colors: colors
-                });
-                makeChart('transaction-summary', {
-                    ...base, chart: { ...base.chart, type: 'donut', height: 170 },
-                    labels: data.donutLabels || [], series: data.donutData || [],
-                    legend: { show: false }, dataLabels: { enabled: true }, colors: colors
-                });
-                makeChart('daily-total-transactions-chart', {
-                    ...base, chart: { ...base.chart, type: 'bar', height: 300 },
-                    series: [
-                        { name: 'Washer', data: data.dailyWasherSeriesData || [] },
-                        { name: 'Dryer', data: data.dailyDryerSeriesData || [] }
-                    ],
-                    xaxis: { categories: data.dailyTransactionCategories || [] },
-                    plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } }, colors: colors
-                });
-                makeChart('hourly-transaction-trend-chart', {
-                    ...base, chart: { ...base.chart, type: 'bar', height: 300 },
-                    series: [{ name: 'Transaksi', data: data.hourlyData || [] }],
-                    xaxis: { categories: data.hourlyLabels || [] },
-                    plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } }, colors: [colors[0]]
-                });
-                const multi = data.dataMultiDeviceChart || {};
-                const multiSeries = multi.multiDeviceChartSeriesData || [];
-                makeChart('multi-device-line-chart', {
-                    ...base, chart: { ...base.chart, type: 'line', height: 320 },
-                    series: multiSeries,
-                    xaxis: { categories: multi.multiDeviceChartCategories || [] },
-                    stroke: { curve: 'smooth', width: 2 }, markers: { size: 0 }, colors: colors
-                });
-                const trend = data.trendDeviceDonut || {};
-                makeChart('device-trend-donut-chart', {
-                    ...base, chart: { ...base.chart, type: 'donut', height: 300 },
-                    labels: trend.trendDeviceDonutLabels || [],
-                    series: trend.trendDeviceDonutData || [],
-                    legend: { position: 'bottom' }, colors: colors
-                });
-
-                const transactionCount = document.querySelector('.widget-chart-sidebar .chart-number');
-                if (transactionCount) {
-                    const small = transactionCount.querySelector('small');
-                    transactionCount.textContent = Number(data.totalTransactions || 0).toLocaleString('id-ID') + ' ';
-                    if (small) transactionCount.appendChild(small);
-                }
-                const summaryBadges = document.querySelectorAll('.list-group .badge');
-                if (summaryBadges.length >= 2) {
-                    summaryBadges[0].textContent = Number(data.totalManualTransactions || 0).toLocaleString('id-ID');
-                    summaryBadges[1].textContent = Number(data.totalQrisTransactions || 0).toLocaleString('id-ID');
-                }
-            })
-            .catch(function (error) {
-                chartElements.forEach(function (element) {
+                    if (!element) return;
                     element.classList.remove('dashboard-chart-loading');
-                    element.innerHTML = '<div class="text-muted small text-center p-3">Grafik gagal dimuat. Muat ulang halaman untuk mencoba lagi.</div>';
+                    element.innerHTML = '<div class="text-muted small text-center p-3">Grafik gagal dimuat. Coba muat ulang halaman.</div>';
                 });
-                console.error('Dashboard chart loading error:', error);
-            });
+            }
+
+            const jobs = [
+                {
+                    chart: 'hourly',
+                    ids: ['hourly-transaction-trend-chart'],
+                    render: function (data) {
+                        return renderChart('hourly-transaction-trend-chart', {
+                            ...baseOptions,
+                            chart: { ...baseOptions.chart, type: 'bar', height: 300 },
+                            series: [{ name: 'Transaksi', data: data.hourlyData || [] }],
+                            xaxis: { categories: data.hourlyLabels || [] },
+                            plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
+                            colors: [colors[0]]
+                        });
+                    }
+                },
+                {
+                    chart: 'transactions',
+                    ids: ['category-line', 'perbandingan-donut', 'transaction-summary'],
+                    render: function (data) {
+                        const transactionTotal = Number(data.totalTransactions || 0).toLocaleString('id-ID');
+                        const transactionCount = document.querySelector('.widget-chart-sidebar .chart-number');
+                        if (transactionCount) {
+                            const small = transactionCount.querySelector('small');
+                            transactionCount.textContent = transactionTotal + ' ';
+                            if (small) transactionCount.appendChild(small);
+                        }
+
+                        const totalStat = document.querySelector('.stat-card.stat-red .stat-value');
+                        if (totalStat) totalStat.textContent = transactionTotal;
+
+                        const summaryBadges = document.querySelectorAll('.list-group .badge');
+                        if (summaryBadges.length >= 2) {
+                            summaryBadges[0].textContent = Number(data.totalManualTransactions || 0).toLocaleString('id-ID');
+                            summaryBadges[1].textContent = Number(data.totalQrisTransactions || 0).toLocaleString('id-ID');
+                        }
+
+                        return Promise.all([
+                            renderChart('category-line', {
+                                ...baseOptions,
+                                chart: { ...baseOptions.chart, type: 'area', height: 260, stacked: false },
+                                series: [
+                                    { name: 'Manual', data: (data.seriesData && data.seriesData.manual) || [] },
+                                    { name: 'QRIS', data: (data.seriesData && data.seriesData.qris) || [] },
+                                    { name: 'Member', data: (data.seriesData && data.seriesData.member) || [] }
+                                ],
+                                xaxis: { categories: data.categories || [] },
+                                colors: colors,
+                                dataLabels: { enabled: false },
+                                stroke: { curve: 'smooth', width: 2 },
+                                fill: { type: 'gradient', gradient: { opacityFrom: .35, opacityTo: .05 } }
+                            }),
+                            renderChart('perbandingan-donut', {
+                                ...baseOptions,
+                                chart: { ...baseOptions.chart, type: 'donut', height: 180 },
+                                labels: data.donutLabels || [],
+                                series: data.donutData || [],
+                                legend: { position: 'bottom' },
+                                colors: colors
+                            }),
+                            renderChart('transaction-summary', {
+                                ...baseOptions,
+                                chart: { ...baseOptions.chart, type: 'donut', height: 170 },
+                                labels: data.donutLabels || [],
+                                series: data.donutData || [],
+                                legend: { show: false },
+                                dataLabels: { enabled: true },
+                                colors: colors
+                            })
+                        ]);
+                    }
+                },
+                {
+                    chart: 'daily',
+                    ids: ['daily-total-transactions-chart'],
+                    render: function (data) {
+                        return renderChart('daily-total-transactions-chart', {
+                            ...baseOptions,
+                            chart: { ...baseOptions.chart, type: 'bar', height: 300 },
+                            series: [
+                                { name: 'Washer', data: data.dailyWasherSeriesData || [] },
+                                { name: 'Dryer', data: data.dailyDryerSeriesData || [] }
+                            ],
+                            xaxis: { categories: data.dailyTransactionCategories || [] },
+                            plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
+                            colors: colors
+                        });
+                    }
+                },
+                {
+                    chart: 'device-trend',
+                    ids: ['device-trend-donut-chart'],
+                    render: function (data) {
+                        const trend = data.trendDeviceDonut || {};
+                        return renderChart('device-trend-donut-chart', {
+                            ...baseOptions,
+                            chart: { ...baseOptions.chart, type: 'donut', height: 300 },
+                            labels: trend.trendDeviceDonutLabels || [],
+                            series: trend.trendDeviceDonutData || [],
+                            legend: { position: 'bottom' },
+                            colors: colors
+                        });
+                    }
+                },
+                {
+                    chart: 'multi-device',
+                    ids: ['multi-device-line-chart'],
+                    render: function (data) {
+                        const multi = data.dataMultiDeviceChart || {};
+                        return renderChart('multi-device-line-chart', {
+                            ...baseOptions,
+                            chart: { ...baseOptions.chart, type: 'line', height: 320 },
+                            series: multi.multiDeviceChartSeriesData || [],
+                            xaxis: { categories: multi.multiDeviceChartCategories || [] },
+                            stroke: { curve: 'smooth', width: 2 },
+                            markers: { size: 0 },
+                            colors: colors
+                        });
+                    }
+                }
+            ];
+
+            async function loadChartsSequentially() {
+                for (const job of jobs) {
+                    const chartUrl = new URL(baseUrl.toString());
+                    chartUrl.searchParams.set('load_charts', '1');
+                    chartUrl.searchParams.set('chart', job.chart);
+                    // Kirim ranking device dari render halaman awal supaya setiap request grafik
+                    // tidak perlu mengulang query untuk menghitung ranking yang sama.
+                    chartUrl.searchParams.set('ranked_devices', JSON.stringify(selectedDeviceCodes));
+
+                    try {
+                        const response = await fetch(chartUrl.toString(), {
+                            headers: {
+                                'X-Requested-With': 'XMLHttpRequest',
+                                'Accept': 'application/json'
+                            },
+                            credentials: 'same-origin',
+                            cache: 'no-store'
+                        });
+
+                        if (!response.ok) {
+                            throw new Error('Gagal memuat grafik ' + job.chart + ' (' + response.status + ')');
+                        }
+
+                        const data = await response.json();
+                        await job.render(data);
+                    } catch (error) {
+                        markChartGroupFailed(job.ids);
+                        console.error('Dashboard chart loading error (' + job.chart + '):', error);
+                    } finally {
+                        job.ids.forEach(function (id) {
+                            document.getElementById(id)?.classList.remove('dashboard-chart-loading');
+                        });
+                    }
+                }
+            }
+
+            loadChartsSequentially();
         });
     </script>
 @endpush
