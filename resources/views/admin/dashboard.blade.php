@@ -567,11 +567,57 @@
                     render: function (data) {
                         return renderChart('hourly-transaction-trend-chart', {
                             ...baseOptions,
-                            chart: { ...baseOptions.chart, type: 'bar', height: 300 },
-                            series: [{ name: 'Transaksi', data: data.hourlyData || [] }],
-                            xaxis: { categories: data.hourlyLabels || [] },
-                            plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
-                            colors: [colors[0]]
+                            chart: { ...baseOptions.chart, type: 'donut', height: 300 },
+                            series: data.hourlyData || [],
+                            labels: data.hourlyLabels || [],
+                            colors: [colors[0], colors[1], colors[2], '#775dd0', '#feb019', '#ff4560', '#26a69a'],
+                            legend: {
+                                position: 'bottom',
+                                fontSize: '11px',
+                                itemMargin: { horizontal: 5, vertical: 2 }
+                            },
+                            dataLabels: { enabled: true },
+                            plotOptions: {
+                                pie: {
+                                    donut: {
+                                        size: '62%',
+                                        labels: {
+                                            show: true,
+                                            name: { show: true, offsetY: -8 },
+                                            value: {
+                                                show: true,
+                                                offsetY: 8,
+                                                formatter: function (value) {
+                                                    return Number(value).toLocaleString('id-ID') + ' transaksi';
+                                                }
+                                            },
+                                            total: {
+                                                show: true,
+                                                label: 'Total',
+                                                formatter: function (chartContext) {
+                                                    return chartContext.globals.seriesTotals.reduce(function (sum, value) {
+                                                        return sum + (Number(value) || 0);
+                                                    }, 0).toLocaleString('id-ID');
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                y: {
+                                    formatter: function (value) {
+                                        return Number(value).toLocaleString('id-ID') + ' transaksi';
+                                    }
+                                }
+                            },
+                            responsive: [{
+                                breakpoint: 576,
+                                options: {
+                                    chart: { height: 280 },
+                                    legend: { fontSize: '10px', itemMargin: { horizontal: 3, vertical: 1 } }
+                                }
+                            }]
                         });
                     }
                 },
