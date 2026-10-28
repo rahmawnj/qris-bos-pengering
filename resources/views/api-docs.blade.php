@@ -32,6 +32,9 @@
 	                activeTab: 'overview',
 	                serviceTypes: fallbackServiceTypes,
 	                apiUrl,
+                billingPayments: [],
+                billingPaymentsLoading: false,
+                selectedBillingPaymentId: '',
 	                init() {
                     const requestedTab = new URLSearchParams(window.location.search).get('tab');
 
@@ -187,6 +190,43 @@
                             url: tester.url,
                             body: 'Body JSON belum valid, jadi service type tidak bisa disinkronkan: ' + error.message,
                         };
+                    }
+                },
+                async loadBillingPayments() {
+                    this.billingPaymentsLoading = true;
+                    try {
+                        const response = await fetch(apiUrl('/api-docs/virtual-account-billing-payments'), {
+                            headers: { Accept: 'application/json' },
+                        });
+                        const data = await response.json();
+                        if (!response.ok || data.ok === false) {
+                            throw new Error(data.message || 'Gagal memuat transaksi VA billing.');
+                        }
+                        this.billingPayments = data.payments || [];
+                        if (!this.billingPayments.length) {
+                            window.alert('Belum ada transaksi Virtual Account billing yang tersimpan.');
+                        }
+                    } catch (error) {
+                        window.alert('Gagal memuat transaksi: ' + error.message);
+                    } finally {
+                        this.billingPaymentsLoading = false;
+                    }
+                },
+                useSelectedBillingPayment() {
+                    const payment = this.billingPayments.find((item) => String(item.id) === String(this.selectedBillingPaymentId));
+                    const tester = this.testers['virtual-account-callback-test'];
+                    if (!payment || !tester) return;
+
+                    try {
+                        const body = tester.body.trim() ? JSON.parse(tester.body) : {};
+                        body.payment_id = payment.id;
+                        delete body.order_id;
+                        delete body.gross_amount;
+                        body.bank = payment.bank || body.bank || 'bni';
+                        if (payment.va_number) body.va_number = payment.va_number;
+                        tester.body = JSON.stringify(body, null, 2);
+                    } catch (error) {
+                        window.alert('Body JSON belum valid: ' + error.message);
                     }
                 },
                 async submitTester() {
@@ -1123,6 +1163,31 @@
                             <li>Status <code class="bg-amber-100 px-1 rounded">settlement</code> atau <code class="bg-amber-100 px-1 rounded">capture</code> dapat menandai pembayaran sebagai paid dan memperbarui tanggal aktif outlet.</li>
                             <li>Simulasi ini berjalan di aplikasi lokal/server saat ini; tidak mengirim notifikasi sungguhan ke Midtrans dan tidak pernah menampilkan Server Key.</li>
                         </ul>
+                    </div>
+
+                    <div class="rounded-xl border border-emerald-200 bg-emerald-50 p-5 space-y-3">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                            <div>
+                                <h3 class="text-sm font-bold uppercase text-emerald-900 tracking-wider">Pilih transaksi perpanjangan yang tersimpan</h3>
+                                <p class="text-xs text-emerald-900/80 mt-1">Supaya status berubah, callback harus memakai order_id QBP yang sama dengan kolom gateway_order_id di database.</p>
+                            </div>
+                            <button type="button" @click="loadBillingPayments()" :disabled="billingPaymentsLoading"
+                                    class="rounded-lg bg-emerald-700 px-3 py-2 text-xs font-bold text-white disabled:opacity-50">
+                                <span x-text="billingPaymentsLoading ? 'Memuat...' : 'Muat transaksi VA'"></span>
+                            </button>
+                        </div>
+                        <label class="block">
+                            <span class="block text-xs font-bold text-emerald-900 mb-1">Transaksi VA billing</span>
+                            <select x-model="selectedBillingPaymentId" @change="useSelectedBillingPayment()"
+                                    class="w-full rounded-lg border border-emerald-200 bg-white px-3 py-2 text-sm text-slate-800">
+                                <option value="">Pilih transaksi...</option>
+                                <template x-for="payment in billingPayments" :key="payment.id">
+                                    <option :value="String(payment.id)"
+                                            x-text="'#' + payment.id + ' · Outlet ' + payment.outlet_id + ' (' + (payment.outlet_name || 'Outlet') + ') · ' + payment.order_id + ' · Rp' + Number(payment.amount).toLocaleString('id-ID') + ' · ' + payment.status"></option>
+                                </template>
+                            </select>
+                        </label>
+                        <p class="text-xs text-emerald-900/80">Setelah memilih transaksi, playground otomatis memakai ID pembayaran dan nominal asli dari database. Kamu tetap bisa memilih status callback di Body JSON.</p>
                     </div>
 
                     <div class="rounded-xl border border-indigo-200 bg-indigo-50 p-5 space-y-2">
