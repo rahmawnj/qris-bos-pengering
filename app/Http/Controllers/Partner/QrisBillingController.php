@@ -19,6 +19,20 @@ class QrisBillingController extends Controller
     public function showPayment(Request $request,QrisBillingPayment $payment){abort_unless(in_array($payment->outlet_id,$this->accessibleOutletIds()),403,'Akses outlet ditolak.');$payment->loadMissing(['outlet.devices']);$outlet=$this->outletFromBillingPayment($payment);abort_unless($outlet,404,'Data perpanjangan tidak ditemukan.');$paymentInstruction=$this->paymentInstruction();return view('partner.qris_billing.show',compact('outlet','paymentInstruction'));}
     public function upload(Request $request,Outlet $outlet){$this->authorizeOutlet($outlet);if(!$outlet->qris_billing_enabled)return redirect()->route('partner.qris-billing.report')->with('error','Outlet ini tidak memiliki fitur perpanjangan QRIS.');return redirect()->route('partner.qris-billing.show',$outlet);}
 
+    public function paymentStatus(QrisBillingPayment $payment)
+    {
+        abort_unless(in_array($payment->outlet_id, $this->accessibleOutletIds()), 403, 'Akses outlet ditolak.');
+        abort_unless($payment->payment_method === 'virtual_account', 404, 'Pembayaran VA tidak ditemukan.');
+
+        $payment->refresh();
+
+        return response()->json([
+            'status' => $payment->status,
+            'paid_at' => $payment->paid_at?->toIso8601String(),
+            'period_end' => $payment->period_end?->toDateString(),
+        ]);
+    }
+
     public function createVirtualAccount(Request $request, Outlet $outlet)
     {
         $this->authorizeOutlet($outlet);
