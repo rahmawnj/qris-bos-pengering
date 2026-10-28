@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ServiceType;
+use App\Models\QrisBillingPayment;
 use Illuminate\Http\Request;
 
 class ApiDocsController extends Controller
@@ -107,6 +108,35 @@ class ApiDocsController extends Controller
             'gateway' => ['http_status' => $response->status()],
             'raw' => $raw ?? $response->body(),
         ]);
+    }
+
+    /**
+     * List recent VA renewal payments for the authenticated API playground.
+     */
+    public function virtualAccountBillingPayments()
+    {
+        abort_unless(session('api_docs_authenticated'), 403);
+
+        $payments = QrisBillingPayment::with('outlet:id,outlet_name')
+            ->where('payment_method', 'virtual_account')
+            ->where('payment_provider', 'midtrans')
+            ->whereNotNull('gateway_order_id')
+            ->latest('id')
+            ->limit(50)
+            ->get()
+            ->map(fn (QrisBillingPayment $payment) => [
+                'id' => $payment->id,
+                'outlet_id' => $payment->outlet_id,
+                'outlet_name' => $payment->outlet?->outlet_name,
+                'order_id' => $payment->gateway_order_id,
+                'amount' => (int) $payment->amount,
+                'status' => $payment->status,
+                'bank' => $payment->va_bank,
+                'va_number' => $payment->va_number,
+                'period_end' => $payment->period_end?->toDateString(),
+            ]);
+
+        return response()->json(['ok' => true, 'payments' => $payments]);
     }
 
     /**
