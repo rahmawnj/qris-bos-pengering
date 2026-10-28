@@ -683,13 +683,51 @@
                     render: function (data) {
                         return renderChart('daily-total-transactions-chart', {
                             ...baseOptions,
-                            chart: { ...baseOptions.chart, type: 'bar', height: 300 },
+                            chart: {
+                                ...baseOptions.chart,
+                                type: 'bar',
+                                height: 300,
+                                stacked: true
+                            },
                             series: [
                                 { name: 'Washer', data: data.dailyWasherSeriesData || [] },
                                 { name: 'Dryer', data: data.dailyDryerSeriesData || [] }
                             ],
-                            xaxis: { categories: data.dailyTransactionCategories || [] },
-                            plotOptions: { bar: { columnWidth: '55%', borderRadius: 3 } },
+                            xaxis: {
+                                categories: data.dailyTransactionCategories || [],
+                                title: { text: 'Tanggal' }
+                            },
+                            yaxis: {
+                                min: 0,
+                                title: { text: 'Jumlah Transaksi' },
+                                labels: {
+                                    formatter: function (value) {
+                                        return Math.round(value).toLocaleString('id-ID');
+                                    }
+                                }
+                            },
+                            plotOptions: {
+                                bar: {
+                                    horizontal: false,
+                                    columnWidth: '45%',
+                                    borderRadius: 3,
+                                    borderRadiusApplication: 'end'
+                                }
+                            },
+                            dataLabels: { enabled: false },
+                            legend: {
+                                position: 'top',
+                                horizontalAlign: 'right'
+                            },
+                            tooltip: {
+                                shared: true,
+                                intersect: false,
+                                y: {
+                                    formatter: function (value) {
+                                        return Number(value || 0).toLocaleString('id-ID') + ' transaksi';
+                                    }
+                                }
+                            },
                             colors: colors
                         });
                     }
