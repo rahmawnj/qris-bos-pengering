@@ -64,6 +64,7 @@ Route::get('/api-flows', [ApiDocsController::class, 'flows'])->name('api-docs.fl
 Route::post('/api-docs/auth', [ApiDocsController::class, 'auth'])->name('api-docs.auth');
 Route::post('/api-docs/test-virtual-account', [ApiDocsController::class, 'testVirtualAccount'])->name('api-docs.test-virtual-account');
 Route::post('/api-docs/test-virtual-account-callback', [ApiDocsController::class, 'testVirtualAccountCallback'])->name('api-docs.test-virtual-account-callback');
+Route::get('/api-docs/virtual-account-billing-payments', [ApiDocsController::class, 'virtualAccountBillingPayments'])->name('api-docs.virtual-account-billing-payments');
 Route::get('/api-docs/logout', [ApiDocsController::class, 'logout'])->name('api-docs.logout');
 
 
