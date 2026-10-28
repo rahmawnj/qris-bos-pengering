@@ -13,8 +13,87 @@ class DeviceController extends Controller
 {
     public function index(Request $request)
     {
-        $devices = Device::with(['outlet.owner'])->latest('id')->get();
         $serviceTypes = ServiceType::orderBy('name')->get(['id', 'name']);
+
+        // Gunakan method index yang sama untuk halaman biasa dan request DataTables AJAX.
+        if ($request->ajax() || $request->has('draw')) {
+            $query = Device::with(['outlet.owner']);
+            $recordsTotal = (clone $query)->count();
+
+            $search = trim((string) $request->input('search.value', ''));
+            if ($search !== '') {
+                $query->where(function ($deviceQuery) use ($search) {
+                    $deviceQuery->where('name', 'like', "%{$search}%")
+                        ->orWhere('code', 'like', "%{$search}%")
+                        ->orWhereHas('outlet', function ($outletQuery) use ($search) {
+                            $outletQuery->where('outlet_name', 'like', "%{$search}%")
+                                ->orWhereHas('owner', function ($ownerQuery) use ($search) {
+                                    $ownerQuery->where('brand_name', 'like', "%{$search}%");
+                                });
+                        });
+                });
+            }
+
+            $recordsFiltered = (clone $query)->count();
+            $start = max((int) $request->input('start', 0), 0);
+            $length = (int) $request->input('length', 10);
+            $length = $length > 0 ? min($length, 100) : 10;
+
+            $devices = $query->latest('id')
+                ->skip($start)
+                ->take($length)
+                ->get();
+
+            $csrf = csrf_token();
+            $data = $devices->map(function (Device $device, int $index) use ($start, $serviceTypes, $csrf) {
+                $outlet = $device->outlet;
+                $owner = $outlet?->owner;
+                $logo = $owner?->brand_logo
+                    ? asset($owner->brand_logo)
+                    : asset('assets/img/default-user.png');
+
+                $statusOptions = '<option value="off"' . ($device->device_status === 'off' ? ' selected' : '') . '>off</option>';
+                foreach ($serviceTypes as $type) {
+                    $value = (string) $type->slug;
+                    $selected = (string) $device->device_status === $value ? ' selected' : '';
+                    $statusOptions .= '<option value="' . e($value) . '"' . $selected . '>' . e($type->name) . '</option>';
+                }
+
+                $statusSelect = '<select class="device-status-select form-control" data-device-id="' . (int) $device->id . '" data-original="' . e((string) $device->device_status) . '">'
+                    . $statusOptions
+                    . '</select>';
+
+                $actions = '<a href="' . e(route('admin.devices.edit', $device)) . '" class="btn btn-primary btn-sm">'
+                    . '<i class="fas fa-edit"></i> Sunting</a> '
+                    . '<form action="' . e(route('admin.devices.destroy', $device)) . '" method="POST" class="d-inline device-delete-form">'
+                    . '<input type="hidden" name="_token" value="' . e($csrf) . '">'
+                    . '<input type="hidden" name="_method" value="DELETE">'
+                    . '<button type="submit" class="btn btn-danger btn-sm">'
+                    . '<i class="fas fa-trash"></i> Hapus</button></form>';
+
+                return [
+                    'number' => $start + $index + 1,
+                    'brand' => '<div style="display:flex;align-items:center;gap:10px;">'
+                        . '<img src="' . e($logo) . '" alt="Logo Brand" style="width:50px;height:50px;object-fit:cover;border-radius:50%;">'
+                        . '<div><div>' . e($owner?->brand_name ?? '-') . '</div>'
+                        . '<div style="font-size:.9em;color:gray;">' . e($outlet?->outlet_name ?? '-') . '</div></div></div>',
+                    'device' => '<div>' . e($device->name ?? '-') . '</div>'
+                        . '<div style="font-size:.9em;color:gray;">' . e($device->code ?? '-') . '</div>',
+                    'status' => $statusSelect,
+                    'actions' => $actions,
+                ];
+            });
+
+            return response()->json([
+                'draw' => (int) $request->input('draw'),
+                'recordsTotal' => $recordsTotal,
+                'recordsFiltered' => $recordsFiltered,
+                'data' => $data,
+            ]);
+        }
+
+        // Data tabel diisi melalui jQuery DataTables, bukan dirender sekaligus di Blade.
+        $devices = collect();
 
         return view('admin.devices.index', compact('devices', 'serviceTypes'));
     }
