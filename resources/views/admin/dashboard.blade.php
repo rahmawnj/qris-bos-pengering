@@ -63,6 +63,37 @@
             to { background-position: -100% 0; }
         }
 
+        .dashboard-chart-enter {
+            animation: dashboard-chart-enter-animation 560ms cubic-bezier(.16, 1, .3, 1) both;
+            transform-origin: center top;
+        }
+
+        @keyframes dashboard-chart-enter-animation {
+            from {
+                opacity: 0;
+                transform: translate3d(0, 14px, 0) scale(.99);
+                filter: blur(2px);
+            }
+            to {
+                opacity: 1;
+                transform: translate3d(0, 0, 0) scale(1);
+                filter: blur(0);
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .dashboard-chart-enter {
+                animation: none;
+                opacity: 1;
+                transform: none;
+                filter: none;
+            }
+
+            .dashboard-chart-loading::after {
+                animation: none;
+            }
+        }
+
         .stat-card {
             position: relative;
             border-radius: 14px;
@@ -489,7 +520,13 @@
             const baseOptions = {
                 chart: {
                     toolbar: { show: false },
-                    animations: { enabled: false },
+                    animations: {
+                        enabled: true,
+                        easing: 'easeinout',
+                        speed: 700,
+                        animateGradually: { enabled: true, delay: 100 },
+                        dynamicAnimation: { enabled: true, speed: 350 }
+                    },
                     fontFamily: 'inherit'
                 },
                 noData: { text: 'Belum ada data' }
@@ -503,7 +540,15 @@
                 }
 
                 element.innerHTML = '';
-                return Promise.resolve(new ApexCharts(element, options).render());
+                element.classList.remove('dashboard-chart-enter');
+
+                const chart = new ApexCharts(element, options);
+                return Promise.resolve(chart.render()).then(function () {
+                    element.classList.remove('dashboard-chart-loading');
+                    // Reflow agar animasi masuk tetap terpicu walaupun chart dimuat async.
+                    void element.offsetWidth;
+                    element.classList.add('dashboard-chart-enter');
+                });
             }
 
             function markChartGroupFailed(ids) {
