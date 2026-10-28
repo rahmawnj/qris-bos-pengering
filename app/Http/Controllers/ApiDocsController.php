@@ -148,9 +148,10 @@ class ApiDocsController extends Controller
         abort_unless(session('api_docs_authenticated'), 403);
 
         $data = $request->validate([
-            'order_id' => 'required|string|max:100',
+            'payment_id' => 'nullable|integer|min:1',
+            'order_id' => 'required_without:payment_id|string|max:100',
             'transaction_status' => 'required|in:pending,capture,settlement,expire,cancel,deny,failure,failed',
-            'gross_amount' => 'required|numeric|min:1000|max:1000000',
+            'gross_amount' => 'required_without:payment_id|numeric|min:1000|max:1000000',
             'transaction_id' => 'nullable|string|max:100',
             'bank' => 'nullable|in:bca,bni,bri,permata,cimb',
             'va_number' => 'nullable|string|max:100',
@@ -163,6 +164,28 @@ class ApiDocsController extends Controller
                 'ok' => false,
                 'message' => 'MIDTRANS_SANDBOX_SERVER_KEY belum dikonfigurasi.',
             ], 422);
+        }
+
+        $selectedPayment = null;
+        if (!empty($data['payment_id'])) {
+            $selectedPayment = QrisBillingPayment::with('outlet')
+                ->whereKey((int) $data['payment_id'])
+                ->where('payment_method', 'virtual_account')
+                ->where('payment_provider', 'midtrans')
+                ->whereNotNull('gateway_order_id')
+                ->first();
+
+            if (!$selectedPayment) {
+                return response()->json([
+                    'ok' => false,
+                    'message' => 'Pembayaran VA perpanjangan tidak ditemukan.',
+                ], 404);
+            }
+
+            $data['order_id'] = $selectedPayment->gateway_order_id;
+            $data['gross_amount'] = $selectedPayment->amount;
+            $data['bank'] = $selectedPayment->va_bank ?: ($data['bank'] ?? null);
+            $data['va_number'] = $selectedPayment->va_number ?: ($data['va_number'] ?? null);
         }
 
         $orderId = trim($data['order_id']);
@@ -210,6 +233,14 @@ class ApiDocsController extends Controller
         return response()->json([
             'ok' => true,
             'environment' => 'sandbox',
+            'selected_payment' => $selectedPayment ? [
+                'id' => $selectedPayment->id,
+                'outlet_id' => $selectedPayment->outlet_id,
+                'outlet_name' => $selectedPayment->outlet?->outlet_name,
+                'order_id' => $selectedPayment->gateway_order_id,
+                'amount' => (int) $selectedPayment->amount,
+                'current_status' => $selectedPayment->status,
+            ] : null,
             'callback_url' => $callbackUrl,
             'delivery_mode' => 'Payload ditandatangani di backend; browser akan mengirim HTTP POST ke endpoint callback sebenarnya.',
             'request' => [
