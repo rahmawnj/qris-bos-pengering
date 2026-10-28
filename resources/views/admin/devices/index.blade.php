@@ -43,53 +43,7 @@
                             <th>Aksi</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        @foreach ($devices as $device)
-                            @php
-                                $outlet = $device->outlet;
-                                $owner = $outlet?->owner;
-                                $logo = $owner?->brand_logo ? asset($owner->brand_logo) : asset('assets/img/default-user.png');
-                            @endphp
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td>
-                                    <div style="display: flex; align-items: center; gap: 10px;">
-                                        <img src="{{ $logo }}" alt="Gambar Pemilik" style="width: 50px; height: 50px; object-fit: cover; border-radius: 50%;">
-                                        <div>
-                                            <div>{{ $owner?->brand_name }}</div>
-                                            <div style="font-size: 0.9em; color: gray;">{{ $outlet?->outlet_name }}</div>
-                                        </div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div>{{ $device->name }}</div>
-                                    <div style="font-size: 0.9em; color: gray;">{{ $device->code }}</div>
-                                </td>
-                                <td>
-                                    <select class="device-status-select form-control" data-device-id="{{ $device->id }}">
-                                        <option value="off" @selected($device->device_status === 'off')>off</option>
-                                        @foreach ($serviceTypes as $type)
-                                            <option value="{{ $type->slug }}" @selected($device->device_status === $type->slug)>
-                                                {{ $type->name }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                </td>
-                                <td>
-                                    <a href="{{ route('admin.devices.edit', $device) }}" class="btn btn-primary btn-sm">
-                                        <i class="fas fa-edit"></i> Sunting
-                                    </a>
-                                    <form action="{{ route('admin.devices.destroy', $device) }}" method="POST" class="d-inline">
-                                        @csrf
-                                        @method('DELETE')
-                                        <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Apakah Anda yakin ingin menghapus device ini?')">
-                                            <i class="fas fa-trash"></i> Hapus
-                                        </button>
-                                    </form>
-                                </td>
-                            </tr>
-                        @endforeach
-                    </tbody>
+                    <tbody></tbody>
                 </table>
             </div>
         </div>
@@ -117,14 +71,35 @@
 
     <script>
         $(document).ready(function() {
+            $.fn.dataTable.ext.errMode = 'none';
+
             var table = $('#data-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: '{{ route('admin.devices.index') }}',
                 responsive: true,
-                dom: '<"row"<"col-sm-5"B><"col-sm-7"fr>>t<"row"<"col-sm-5"i><"col-sm-7"p>>',
+                autoWidth: false,
+                destroy: true,
                 order: [],
-                columnDefs: [
-                    { targets: [0, 4], orderable: false, searchable: false },
-                    { targets: [1, 2, 3], orderable: false }
-                ],
+                dom: '<"row"<"col-sm-5"B><"col-sm-7"fr>>t<"row"<"col-sm-5"i><"col-sm-7"p>>',
+                columns: [{
+                    data: 'number',
+                    orderable: false,
+                    searchable: false
+                }, {
+                    data: 'brand',
+                    orderable: false
+                }, {
+                    data: 'device',
+                    orderable: false
+                }, {
+                    data: 'status',
+                    orderable: false
+                }, {
+                    data: 'actions',
+                    orderable: false,
+                    searchable: false
+                }],
                 buttons: fullExportButtons({
                     title: 'Daftar Device',
                     columns: [
@@ -138,11 +113,56 @@
                                 return $('<div>').html(row[3]).find('option:selected').text().trim();
                             }
                         }
-                    ]
-                }),
+                    ],
+                    error: showDataTableError
+                })
             });
 
-            $('#data-table').on('change', '.device-status-select', function() {
+            $('#data-table').on('xhr.dt', function(e, settings, json, xhr) {
+                if (xhr && xhr.status >= 400) {
+                    showDataTableError(xhr);
+                }
+            });
+
+            $('#data-table').on('error.dt', function(e, settings, techNote, message) {
+                var xhr = settings && settings.jqXHR;
+                if (xhr) {
+                    showDataTableError(xhr);
+                    return;
+                }
+                swal('DataTables Error', message, 'error');
+            });
+
+            function showDataTableError(xhr) {
+                var message = 'HTTP ' + xhr.status + ' ' + (xhr.statusText || '');
+                var response = xhr.responseJSON || null;
+
+                if (response) {
+                    message += '\n\n' + (response.message || response.error || JSON.stringify(response));
+                } else if (xhr.responseText) {
+                    var plainText = $('<div>').html(xhr.responseText).text().replace(/\s+/g, ' ').trim();
+                    message += '\n\n' + plainText.substring(0, 700);
+                }
+
+                swal({
+                    title: 'DataTables Error',
+                    text: message,
+                    icon: 'error',
+                    button: {
+                        text: 'OK',
+                        className: 'btn btn-danger',
+                        closeModal: true
+                    }
+                });
+            }
+
+            $('#data-table').on('submit', '.device-delete-form', function(event) {
+                if (!window.confirm('Apakah Anda yakin ingin menghapus device ini?')) {
+                    event.preventDefault();
+                }
+            });
+
+            $('#data-table').on('change', '.device-status-select', function() {            $('#data-table').on('change', '.device-status-select', function() {
                 var newStatus = $(this).val();
                 var deviceId = $(this).data('device-id');
                 var originalStatus = $(this).data('original');
@@ -187,36 +207,47 @@
                     formData.append('bypass_note', bypassNote);
                     formData.append('_token', '{{ csrf_token() }}');
 
-                    // Kirim data ke API
-                    fetch('/api/devices/' + deviceId + '/update-status', {
-                            method: 'POST',
-                            body: formData
-                        })
-                        .then(response => response.json())
-                        .then(data => {
-                            if (data.status === 'success') {
-                                $.gritter.add({
-                                    title: 'Success',
-                                    text: data.message,
-                                    sticky: false,
-                                    time: 3000,
-                                    class_name: 'my-sticky-class gritter-light'
-                                });
-                                $(this).data('original', newStatus); // Update original status
-                            } else {
-                                throw new Error(data.message || 'Update failed');
-                            }
-                        })
-                        .catch(error => {
+                    // Kirim perubahan status menggunakan jQuery AJAX.
+                    var $select = $(this);
+                    $.ajax({
+                        url: '/api/devices/' + deviceId + '/update-status',
+                        method: 'POST',
+                        data: formData,
+                        processData: false,
+                        contentType: false,
+                        dataType: 'json'
+                    }).done(function(data) {
+                        if (data.status === 'success') {
                             $.gritter.add({
-                                title: 'Error',
-                                text: error.message || 'Terjadi kesalahan saat mengupdate status',
+                                title: 'Success',
+                                text: data.message,
                                 sticky: false,
                                 time: 3000,
                                 class_name: 'my-sticky-class gritter-light'
                             });
-                            $(this).val(originalStatus); // Kembalikan ke status awal
+                            $select.data('original', newStatus);
+                            return;
+                        }
+
+                        $.gritter.add({
+                            title: 'Error',
+                            text: data.message || 'Gagal memperbarui status device.',
+                            sticky: false,
+                            time: 3000,
+                            class_name: 'my-sticky-class gritter-light'
                         });
+                        $select.val(originalStatus);
+                    }).fail(function(xhr) {
+                        var response = xhr.responseJSON || {};
+                        $.gritter.add({
+                            title: 'Error',
+                            text: response.message || 'Terjadi kesalahan saat mengupdate status',
+                            sticky: false,
+                            time: 3000,
+                            class_name: 'my-sticky-class gritter-light'
+                        });
+                        $select.val(originalStatus);
+                    });
                 });
             });
 
