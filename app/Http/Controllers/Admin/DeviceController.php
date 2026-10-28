@@ -20,7 +20,8 @@ class DeviceController extends Controller
             $query = Device::with(['outlet.owner']);
             $recordsTotal = (clone $query)->count();
 
-            $search = trim((string) $request->input('search.value', ''));
+            $isExport = $request->boolean('export');
+            $search = trim((string) $request->input('search.value', $request->input('search', '')));
             if ($search !== '') {
                 $query->where(function ($deviceQuery) use ($search) {
                     $deviceQuery->where('name', 'like', "%{$search}%")
@@ -39,10 +40,14 @@ class DeviceController extends Controller
             $length = (int) $request->input('length', 10);
             $length = $length > 0 ? min($length, 100) : 10;
 
-            $devices = $query->latest('id')
-                ->skip($start)
-                ->take($length)
-                ->get();
+            $devicesQuery = $query->latest('id');
+            $devices = $isExport
+                ? $devicesQuery->get()
+                : $devicesQuery->skip($start)->take($length)->get();
+
+            if ($isExport) {
+                $start = 0;
+            }
 
             $csrf = csrf_token();
             $data = $devices->map(function (Device $device, int $index) use ($start, $serviceTypes, $csrf) {
@@ -71,18 +76,33 @@ class DeviceController extends Controller
                     . '<button type="submit" class="btn btn-danger btn-sm">'
                     . '<i class="fas fa-trash"></i> Hapus</button></form>';
 
+                $statusText = $device->device_status === 'off'
+                    ? 'off'
+                    : ($serviceTypes->first(fn ($type) => $type->slug === $device->device_status)?->name
+                        ?? $device->device_status
+                        ?? '-');
+                $brandText = ($owner?->brand_name ?? '-') . ' - ' . ($outlet?->outlet_name ?? '-');
+                $deviceText = ($device->name ?? '-') . ' (' . ($device->code ?? '-') . ')';
+
                 return [
                     'number' => $start + $index + 1,
                     'brand' => '<div style="display:flex;align-items:center;gap:10px;">'
                         . '<img src="' . e($logo) . '" alt="Logo Brand" style="width:50px;height:50px;object-fit:cover;border-radius:50%;">'
                         . '<div><div>' . e($owner?->brand_name ?? '-') . '</div>'
                         . '<div style="font-size:.9em;color:gray;">' . e($outlet?->outlet_name ?? '-') . '</div></div></div>',
+                    'brand_text' => $brandText,
                     'device' => '<div>' . e($device->name ?? '-') . '</div>'
                         . '<div style="font-size:.9em;color:gray;">' . e($device->code ?? '-') . '</div>',
+                    'device_text' => $deviceText,
                     'status' => $statusSelect,
+                    'status_text' => $statusText,
                     'actions' => $actions,
                 ];
             });
+
+            if ($isExport) {
+                return response()->json(['data' => $data]);
+            }
 
             return response()->json([
                 'draw' => (int) $request->input('draw'),
