@@ -139,6 +139,7 @@ Route::get('export/qris-transactions', [ExportController::class, 'qrisTransactio
         Route::post('users/{user}/impersonate', [UserController::class, 'impersonate'])->name('users.impersonate');
         Route::get('qris-billing', [AdminQrisBillingController::class, 'index'])->name('qris-billing.index');
         Route::get('qris-billing/report', [AdminQrisBillingController::class, 'report'])->name('qris-billing.report');
+        Route::post('qris-billing/payment/{payment}/sync-midtrans-status', [AdminQrisBillingController::class, 'syncMidtransStatus'])->name('qris-billing.payment.sync-midtrans-status');
         Route::get('qris-billing/payment/{payment}', [AdminQrisBillingController::class, 'showPayment'])->name('qris-billing.payment.show');
         Route::post('qris-billing/payment/{payment}/proof', [AdminQrisBillingController::class, 'updateProof'])->name('qris-billing.payment.proof.update');
         Route::get('qris-billing/{outlet}', [AdminQrisBillingController::class, 'show'])->name('qris-billing.show');
