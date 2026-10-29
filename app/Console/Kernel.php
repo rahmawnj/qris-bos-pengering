@@ -12,6 +12,11 @@ class Kernel extends ConsoleKernel
      */
     protected function schedule(Schedule $schedule): void
     {
+        // Sinkronkan status VA QRIS billing dari Midtrans Sandbox setiap 5 menit.
+        $schedule->command('qris-billing:sync-midtrans-pending --limit=100')
+            ->everyFiveMinutes()
+            ->withoutOverlapping();
+
         // Hapus transaksi QRIS pending (hasil qr_request) untuk brand tertentu
         $schedule->command('qris:cleanup-pending --brand="The Laundry Spot" --minutes=15')
             ->everyFiveMinutes();
