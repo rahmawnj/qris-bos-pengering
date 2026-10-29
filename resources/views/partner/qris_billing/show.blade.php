@@ -102,13 +102,11 @@
                             if (!Number.isFinite(expiryTimestamp) || !countdown) return;
                             const remaining = expiryTimestamp - Date.now();
                             if (remaining <= 0) {
-                                if (!reloadStarted) {
-                                    reloadStarted = true;
-                                    countdown.textContent = 'VA sudah kedaluwarsa. Memuat ulang halaman...';
-                                    window.setTimeout(function () {
-                                        window.location.reload();
-                                    }, 700);
-                                }
+                                countdown.classList.remove('text-danger');
+                                countdown.classList.add('text-warning');
+                                countdown.textContent = 'Masa berlaku VA habis. Sedang memverifikasi status pembayaran ke Midtrans...';
+                                // Jangan tandai gagal atau reload berulang hanya karena countdown habis.
+                                // checkPaymentStatus tetap polling; status berubah hanya setelah dikonfirmasi gateway.
                                 return;
                             }
 
@@ -124,7 +122,7 @@
                     })();
                     </script>
                 @endif
-                <div class="small text-muted mt-3">Status akan diperbarui otomatis setelah gateway mengonfirmasi pembayaran. Jika VA kedaluwarsa atau gagal, halaman akan dimuat ulang agar kamu bisa membuat VA baru.</div>
+                <div class="small text-muted mt-3">Status akan diperbarui otomatis setelah gateway mengonfirmasi pembayaran. Jika waktu VA habis, sistem akan memeriksa status ke Midtrans terlebih dahulu. Halaman hanya akan diperbarui setelah status pembayaran terkonfirmasi.</div>
             </div>
         </div>
     @else
