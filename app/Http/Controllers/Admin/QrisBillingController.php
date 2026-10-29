@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Outlet;
 use App\Models\Owner;
 use App\Models\QrisBillingPayment;
+use App\Services\MidtransQrisBillingStatusService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -14,6 +15,13 @@ use Illuminate\Support\Facades\Storage;
 class QrisBillingController extends Controller
 {
     public function index(Request $request) { $period=$request->input('period'); $ownerId=$request->input('owner_id'); $search=$request->input('search'); $payments=QrisBillingPayment::with(['outlet.owner.user','outlet.owner.withdrawals'])->where('status','pending')->when($period,fn($q)=>$q->whereRaw("DATE_FORMAT(period_end, '%Y-%m') = ?",[$period]))->whereHas('outlet',function($q)use($ownerId,$search){$q->when($ownerId,fn($x)=>$x->where('owner_id',$ownerId))->when($search,function($x)use($search){$x->where(function($i)use($search){$i->where('outlet_name','like',"%{$search}%")->orWhere('code','like',"%{$search}%")->orWhereHas('owner',function($o)use($search){$o->where('brand_name','like',"%{$search}%")->orWhere('name','like',"%{$search}%");});});});})->latest('created_at')->get(); $summary=$this->summaryFromPayments($payments); $owners=Owner::orderBy('brand_name')->get(); return view('admin.qris_billing.index',compact('payments','period','ownerId','search','summary','owners')); }
+
+    public function syncMidtransStatus(QrisBillingPayment $payment, MidtransQrisBillingStatusService $statusService)
+    {
+        $result = $statusService->sync($payment);
+
+        return back()->with($result['ok'] ? 'success' : 'error', $result['message']);
+    }
 
     public function blocked(Request $request) { $ownerId=$request->input('owner_id'); $search=$request->input('search'); $today=now()->toDateString(); $outlets=$this->baseOutletQuery()->where(function($q)use($today){$q->whereNull('qris_billing_due_date')->orWhereDate('qris_billing_due_date','<',$today);})->whereDoesntHave('qrisBillingPayments',fn($q)=>$q->where('status','pending'))->when($ownerId,fn($q)=>$q->where('owner_id',$ownerId))->when($search,function($q)use($search){$q->where(function($i)use($search){$i->where('outlet_name','like',"%{$search}%")->orWhere('code','like',"%{$search}%")->orWhereHas('owner',function($o)use($search){$o->where('brand_name','like',"%{$search}%")->orWhere('name','like',"%{$search}%");});});})->orderByRaw('qris_billing_due_date IS NULL DESC, qris_billing_due_date ASC')->get()->map(fn(Outlet $o)=>$this->decorateOutlet($o,now()->format('Y-m'))); $summary=$this->summary($outlets); $owners=Owner::orderBy('brand_name')->get(); return view('admin.qris_billing.blocked',compact('outlets','ownerId','search','summary','owners')); }
 
