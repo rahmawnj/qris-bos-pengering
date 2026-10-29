@@ -132,6 +132,17 @@
                                     <a href="{{ route('admin.qris-billing.payment.show', $payment) }}" class="btn btn-info btn-xs">
                                         <i class="fa fa-check-circle me-1"></i> Konfirmasi
                                     </a>
+                                    @if ($payment->payment_provider === 'midtrans' && $payment->payment_method === 'virtual_account')
+                                        <form method="POST" action="{{ route('admin.qris-billing.payment.sync-midtrans-status', $payment) }}" class="d-inline">
+                                            @csrf
+                                            <button type="submit" class="btn btn-outline-primary btn-xs mt-1" onclick="this.disabled=true; this.form.submit();">
+                                                <i class="fa fa-rotate me-1"></i> Cek Status Midtrans
+                                            </button>
+                                        </form>
+                                        @if ($payment->expires_at)
+                                            <div class="text-muted small mt-1">VA berlaku sampai {{ $payment->expires_at->format('d/m/Y H:i') }}</div>
+                                        @endif
+                                    @endif
                                 </td>
                             </tr>
                         @empty
