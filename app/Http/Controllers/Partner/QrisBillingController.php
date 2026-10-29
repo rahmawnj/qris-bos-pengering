@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Models\Outlet;
 use App\Models\QrisBillingPayment;
+use App\Services\MidtransQrisBillingStatusService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -195,15 +196,21 @@ class QrisBillingController extends Controller
 
     private function expireTimedOutVirtualAccounts(Outlet $outlet): void
     {
-        $outlet->qrisBillingPayments()
+        // Countdown habis bukan bukti pembayaran gagal. Verifikasi status ke Midtrans
+        // terlebih dahulu; bila API belum memastikan status terminal, biarkan pending.
+        $payments = $outlet->qrisBillingPayments()
             ->where('payment_method', 'virtual_account')
+            ->where('payment_provider', 'midtrans')
             ->where('status', 'pending')
+            ->whereNotNull('gateway_order_id')
             ->whereNotNull('expires_at')
             ->where('expires_at', '<=', now())
-            ->update([
-                'status' => 'expired',
-                'updated_at' => now(),
-            ]);
+            ->get();
+
+        $statusService = app(MidtransQrisBillingStatusService::class);
+        foreach ($payments as $payment) {
+            $statusService->sync($payment);
+        }
 
         // Ensure subsequent summary calculations do not use stale relation data.
         $outlet->unsetRelation('qrisBillingPayments');
