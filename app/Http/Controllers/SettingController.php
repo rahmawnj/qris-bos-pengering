@@ -49,9 +49,9 @@ class SettingController extends Controller
             'qris_billing_max_fee_mode' => ['required', 'string', Rule::in(['capped', 'unlimited'])],
             'qris_billing_max_fee' => 'required_if:qris_billing_max_fee_mode,capped|nullable|integer|min:0',
             'qris_billing_advance_days' => 'required|integer|min:0|max:31',
-            'qris_billing_payment_bank_name' => 'required|string|max:100',
-            'qris_billing_payment_account_number' => 'required|string|max:100',
-            'qris_billing_payment_account_holder' => 'required|string|max:100',
+            'qris_billing_payment_bank_name' => ['required_if:qris_billing_payment_method,manual,both', 'nullable', 'string', 'max:100'],
+            'qris_billing_payment_account_number' => ['required_if:qris_billing_payment_method,manual,both', 'nullable', 'string', 'max:100'],
+            'qris_billing_payment_account_holder' => ['required_if:qris_billing_payment_method,manual,both', 'nullable', 'string', 'max:100'],
             'qris_billing_payment_method' => ['required', 'string', Rule::in(['manual', 'virtual_account', 'both'])],
         ]);
 
