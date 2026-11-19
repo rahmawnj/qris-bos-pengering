@@ -23,6 +23,18 @@
                     $period = $periodStart && $periodEnd && $periodStart->format('Y-m-d') !== $periodEnd->format('Y-m-d')
                         ? $periodStart->translatedFormat('d F Y') . ' - ' . $periodEnd->translatedFormat('d F Y')
                         : (($periodEnd ?? $periodStart)?->translatedFormat('d F Y') ?? '-');
+                    $statusClass = [
+                        'paid' => 'success',
+                        'pending' => 'warning text-dark',
+                        'failed' => 'danger',
+                        'rejected' => 'danger',
+                    ][$payment->status] ?? 'secondary';
+                    $statusLabel = [
+                        'paid' => 'Aktif / Lunas',
+                        'pending' => 'Menunggu Konfirmasi',
+                        'failed' => 'Gagal',
+                        'rejected' => 'Ditolak',
+                    ][$payment->status] ?? ucfirst($payment->status);
                 @endphp
                 <tr>
                     <td>{{ $loop->iteration }}</td>
@@ -50,7 +62,7 @@
                         {{ $payment->period_end?->format('d/m/Y') ?? '-' }}
                     </td>
                     <td class="text-center">
-                        <span class="badge bg-success">Aktif</span>
+                        <span class="badge bg-{{ $statusClass }}">{{ $statusLabel }}</span>
                     </td>
                     <td class="text-center">
                         @if ($payment->proof_of_payment)
