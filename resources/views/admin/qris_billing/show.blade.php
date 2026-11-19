@@ -218,6 +218,7 @@
                                 <p class="mb-0">Perpanjangan ini sudah dikonfirmasi pada <strong>{{ $outlet->billing_payment->paid_at->format('d/m/Y H:i') }}</strong>.</p>
                             </div>
                         @endif
+                        @endif
                     @else
                         <div class="py-5">
                             <i class="fa fa-image fa-4x text-muted mb-3"></i>
