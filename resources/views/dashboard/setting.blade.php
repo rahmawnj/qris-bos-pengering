@@ -177,6 +177,13 @@ document.addEventListener('DOMContentLoaded', function () {
         const showManual = selected === 'manual' || selected === 'both';
         manualBankFields.style.display = showManual ? '' : 'none';
     }
+    const manualBankInputs = manualBankFields.querySelectorAll('input');
+    function syncManualBankFields() {
+        const selected = document.querySelector('input[name="qris_billing_payment_method"]:checked')?.value;
+        const showManual = selected === 'manual' || selected === 'both';
+        manualBankFields.style.display = showManual ? '' : 'none';
+        manualBankInputs.forEach((input) => input.required = showManual);
+    }
     paymentMethodInputs.forEach((input) => input.addEventListener('change', syncManualBankFields));
     syncManualBankFields();
 

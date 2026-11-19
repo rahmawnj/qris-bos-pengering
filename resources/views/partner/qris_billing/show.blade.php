@@ -133,75 +133,59 @@
     <p class="text-muted small mb-4">Kamu bisa membayar otomatis melalui Virtual Account atau transfer manual dengan mengunggah bukti pembayaran.</p>
 
     <div class="payment-method-grid mb-4">
+        @if(in_array($paymentMethod, ['virtual_account', 'both'], true))
         <label class="payment-method-option">
-            <input type="radio" name="billing_payment_method" value="virtual_account" checked>
+            <input type="radio" name="billing_payment_method" value="virtual_account" {{ $paymentMethod === 'virtual_account' ? 'checked' : ($paymentMethod === 'both' ? 'checked' : '') }}>
             <span class="payment-method-card">
                 <i class="fa fa-university fa-2x text-primary"></i>
                 <strong>Virtual Account</strong>
                 <small class="text-muted">Pembayaran otomatis melalui Midtrans</small>
             </span>
         </label>
+        @endif
+        @if(in_array($paymentMethod, ['manual', 'both'], true))
         <label class="payment-method-option">
-            <input type="radio" name="billing_payment_method" value="manual">
+            <input type="radio" name="billing_payment_method" value="manual" {{ $paymentMethod === 'manual' ? 'checked' : '' }}>
             <span class="payment-method-card">
                 <i class="fa fa-receipt fa-2x text-success"></i>
                 <strong>Transfer Manual</strong>
                 <small class="text-muted">Transfer rekening dan upload bukti</small>
             </span>
         </label>
+        @endif
     </div>
 
-    <div id="qris-va-method-panel">
+    <div id="qris-va-method-panel" class="{{ $paymentMethod === 'manual' ? 'd-none' : '' }}">
         <h6 class="fw-bold mb-2">Pilih Bank Virtual Account</h6>
         <form action="{{ route('partner.qris-billing.virtual-account', $outlet) }}" method="POST" id="qris-va-form">
             @csrf
             <div class="bank-grid mb-4">
-                <label class="bank-option">
-                    <input type="radio" name="va_bank" value="bca" required>
-                    <span class="bank-card"><img src="https://dicoding-web-img.sgp1.digitaloceanspaces.com/original/jobs/dos%3Acompany_logo_pt_bank_central_asia_tbk_200723102046.jpg" alt="Logo BCA"><span>BCA</span></span>
-                </label>
-                <label class="bank-option">
-                    <input type="radio" name="va_bank" value="bni" required>
-                    <span class="bank-card"><img src="https://i.pinimg.com/736x/ef/33/52/ef3352ee1f22a05508f2aa618bac5642.jpg" alt="Logo BNI"><span>BNI</span></span>
-                </label>
-                <label class="bank-option">
-                    <input type="radio" name="va_bank" value="bri" required>
-                    <span class="bank-card"><img src="https://zonalogo.com/assets/logo-bank-bri.webp" alt="Logo BRI"><span>BRI</span></span>
-                </label>
-                <label class="bank-option">
-                    <input type="radio" name="va_bank" value="permata" required>
-                    <span class="bank-card"><img src="https://zonalogo.com/assets/logo-bank-permata.webp" alt="Logo Permata Bank"><span>Permata Bank</span></span>
-                </label>
-                <label class="bank-option">
-                    <input type="radio" name="va_bank" value="cimb" required>
-                    <span class="bank-card"><img src="https://www.itworks.id/wp-content/uploads/2019/06/Logo-Bank-CIMB-Niaga.jpg" alt="Logo CIMB Niaga"><span>CIMB Niaga</span></span>
-                </label>
+                <label class="bank-option"><input type="radio" name="va_bank" value="bca"><span class="bank-card"><img src="https://dicoding-web-img.sgp1.digitaloceanspaces.com/original/jobs/dos%3Acompany_logo_pt_bank_central_asia_tbk_200723102046.jpg" alt="Logo BCA"><span>BCA</span></span></label>
+                <label class="bank-option"><input type="radio" name="va_bank" value="bni"><span class="bank-card"><img src="https://i.pinimg.com/736x/ef/33/52/ef3352ee1f22a05508f2aa618bac5642.jpg" alt="Logo BNI"><span>BNI</span></span></label>
+                <label class="bank-option"><input type="radio" name="va_bank" value="bri"><span class="bank-card"><img src="https://zonalogo.com/assets/logo-bank-bri.webp" alt="Logo BRI"><span>BRI</span></span></label>
+                <label class="bank-option"><input type="radio" name="va_bank" value="permata"><span class="bank-card"><img src="https://zonalogo.com/assets/logo-bank-permata.webp" alt="Logo Permata Bank"><span>Permata Bank</span></span></label>
+                <label class="bank-option"><input type="radio" name="va_bank" value="cimb"><span class="bank-card"><img src="https://www.itworks.id/wp-content/uploads/2019/06/Logo-Bank-CIMB-Niaga.jpg" alt="Logo CIMB Niaga"><span>CIMB Niaga</span></span></label>
             </div>
             <button type="submit" class="btn btn-success btn-lg w-100 rounded-pill shadow-sm"><i class="fa fa-university me-1"></i> Buat Virtual Account</button>
         </form>
     </div>
 
-    <div id="qris-manual-method-panel" class="d-none">
+    <div id="qris-manual-method-panel" class="{{ $paymentMethod === 'manual' ? '' : 'd-none' }}">
         <div class="alert alert-info border-0">
             <div class="fw-bold mb-2">Rekening Tujuan Transfer</div>
-            <div class="small text-muted">Bank</div>
-            <div class="fw-bold mb-2">{{ $paymentInstruction['bank_name'] }}</div>
-            <div class="small text-muted">Nomor Rekening</div>
-            <div class="fw-bold fs-5 mb-2">{{ $paymentInstruction['account_number'] }}</div>
-            <div class="small text-muted">Atas Nama</div>
-            <div class="fw-bold">{{ $paymentInstruction['account_holder'] }}</div>
+            <div class="small text-muted">Bank</div><div class="fw-bold mb-2">{{ $paymentInstruction['bank_name'] }}</div>
+            <div class="small text-muted">Nomor Rekening</div><div class="fw-bold fs-5 mb-2">{{ $paymentInstruction['account_number'] }}</div>
+            <div class="small text-muted">Atas Nama</div><div class="fw-bold">{{ $paymentInstruction['account_holder'] }}</div>
         </div>
         <form action="{{ route('partner.qris-billing.manual-transfer', $outlet) }}" method="POST" enctype="multipart/form-data">
             @csrf
             <div class="mb-3">
                 <label for="proof_of_payment" class="form-label fw-bold">Foto Bukti Transfer</label>
-                <input type="file" name="proof_of_payment" id="proof_of_payment" class="form-control" accept="image/jpeg,image/png,image/webp" required>
+                <input type="file" name="proof_of_payment" id="proof_of_payment" class="form-control" accept="image/jpeg,image/png,image/webp">
                 <div class="form-text">Format JPG, JPEG, PNG, atau WEBP. Maksimal 5 MB.</div>
                 @error('proof_of_payment')<div class="text-danger small mt-1">{{ $message }}</div>@enderror
             </div>
-            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill" onclick="return confirm('Kirim bukti transfer untuk diverifikasi admin?')">
-                <i class="fa fa-upload me-1"></i> Kirim Bukti Transfer
-            </button>
+            <button type="submit" class="btn btn-primary btn-lg w-100 rounded-pill" onclick="return confirm('Kirim bukti transfer untuk diverifikasi admin?')"><i class="fa fa-upload me-1"></i> Kirim Bukti Transfer</button>
         </form>
     </div>
 
@@ -211,13 +195,15 @@
         const vaPanel = document.getElementById('qris-va-method-panel');
         const manualPanel = document.getElementById('qris-manual-method-panel');
         const vaBankInputs = vaPanel ? vaPanel.querySelectorAll('input[name="va_bank"]') : [];
+        const proofInput = document.getElementById('proof_of_payment');
 
         function togglePaymentMethod() {
-            const selected = document.querySelector('input[name="billing_payment_method"]:checked')?.value;
+            const selected = document.querySelector('input[name="billing_payment_method"]:checked')?.value || @json($paymentMethod);
             const useManual = selected === 'manual';
             if (vaPanel) vaPanel.classList.toggle('d-none', useManual);
             if (manualPanel) manualPanel.classList.toggle('d-none', !useManual);
             vaBankInputs.forEach((input) => input.required = !useManual);
+            if (proofInput) proofInput.required = useManual;
         }
 
         radios.forEach((radio) => radio.addEventListener('change', togglePaymentMethod));
