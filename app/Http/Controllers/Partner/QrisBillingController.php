@@ -10,6 +10,9 @@ use App\Services\MidtransQrisBillingStatusService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Str;
 
 class QrisBillingController extends Controller
@@ -32,6 +35,86 @@ class QrisBillingController extends Controller
             'paid_at' => $payment->paid_at?->toIso8601String(),
             'period_end' => $payment->period_end?->toDateString(),
         ]);
+    }
+
+
+    public function submitManualTransfer(Request $request, Outlet $outlet)
+    {
+        $this->authorizeOutlet($outlet);
+
+        if (!$outlet->qris_billing_enabled) {
+            return back()->with('error', 'Outlet ini tidak memiliki fitur perpanjangan QRIS.');
+        }
+
+        $request->validate([
+            'proof_of_payment' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:5120'],
+        ], [
+            'proof_of_payment.required' => 'Silakan unggah foto bukti transfer.',
+            'proof_of_payment.image' => 'File bukti harus berupa gambar.',
+            'proof_of_payment.mimes' => 'Format bukti harus JPG, JPEG, PNG, atau WEBP.',
+            'proof_of_payment.max' => 'Ukuran foto maksimal 5 MB.',
+        ]);
+
+        // Pastikan VA yang sudah melewati expiry diperiksa ke Midtrans sebelum
+        // mengizinkan outlet memilih metode pembayaran lain.
+        $this->expireTimedOutVirtualAccounts($outlet);
+
+        $proofPath = $request->file('proof_of_payment')->store('qris-billing', 'public');
+
+        try {
+            DB::transaction(function () use ($outlet, $proofPath) {
+                $lockedOutlet = Outlet::query()->whereKey($outlet->id)->lockForUpdate()->firstOrFail();
+                $lockedOutlet->load(['devices', 'qrisBillingPayments']);
+
+                $summary = $lockedOutlet->qrisBillingUnpaidSummary();
+                if (($summary['pending_count'] ?? 0) > 0) {
+                    throw ValidationException::withMessages([
+                        'proof_of_payment' => 'Masih ada pembayaran yang menunggu verifikasi. Selesaikan pembayaran sebelumnya terlebih dahulu.',
+                    ]);
+                }
+
+                if (empty($summary['periods']) || (int) ($summary['amount'] ?? 0) < 1) {
+                    throw ValidationException::withMessages([
+                        'proof_of_payment' => 'Tidak ada tagihan perpanjangan yang dapat dibayar saat ini.',
+                    ]);
+                }
+
+                $period = $summary['periods'][0];
+                $startDate = $period['status'] === 'prepay'
+                    ? $lockedOutlet->qris_billing_due_date->copy()->startOfDay()
+                    : now()->copy()->startOfDay();
+                $endDate = $startDate->copy()->addMonthNoOverflow()->startOfDay();
+
+                QrisBillingPayment::create([
+                    'outlet_id' => $lockedOutlet->id,
+                    'period_start' => $startDate->toDateString(),
+                    'period_end' => $endDate->toDateString(),
+                    'amount' => (int) $summary['amount'],
+                    'status' => 'pending',
+                    'payment_method' => 'manual',
+                    'payment_provider' => 'manual',
+                    'proof_of_payment' => $proofPath,
+                ]);
+            });
+        } catch (\\Throwable $e) {
+            if (Storage::disk('public')->exists($proofPath)) {
+                Storage::disk('public')->delete($proofPath);
+            }
+
+            if ($e instanceof ValidationException) {
+                throw $e;
+            }
+
+            \\Illuminate\\Support\\Facades\\Log::error('QRIS billing manual transfer submission failed.', [
+                'outlet_id' => $outlet->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return back()->with('error', 'Bukti transfer gagal dikirim. Silakan coba kembali.');
+        }
+
+        return redirect()->route('partner.qris-billing.show', $outlet)
+            ->with('success', 'Bukti transfer berhasil dikirim dan sedang menunggu verifikasi admin.');
     }
 
     public function createVirtualAccount(Request $request, Outlet $outlet)
