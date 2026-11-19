@@ -32,6 +32,22 @@ class QrisBillingController extends Controller
     public function show(Request $request, Outlet $outlet) { $period=$request->input('period',now()->format('Y-m')); $outlet->load(['owner.user','owner.withdrawals','devices','qrisBillingPayments']); $outlet=$this->decorateOutlet($outlet,$period); $billingBreakdown=$this->billingBreakdown($outlet); return view('admin.qris_billing.show',compact('outlet','period','billingBreakdown')); }
     public function showPayment(Request $request,QrisBillingPayment $payment) { $period=$request->input('period',$payment->period_end?->format('Y-m')??$payment->period_start?->format('Y-m')??now()->format('Y-m')); $outlet=$this->outletFromBillingPayment($payment); if(!$outlet)abort(404,'Data outlet tidak ditemukan.'); $outlet->load(['owner.user','owner.withdrawals','devices']); $billingBreakdown=$this->billingBreakdown($outlet); return view('admin.qris_billing.show',compact('outlet','period','billingBreakdown')); }
 
+    public function rejectPayment(Request $request, QrisBillingPayment $payment)
+    {
+        if ($payment->status !== 'pending') {
+            return back()->with('error', 'Hanya pembayaran yang masih menunggu verifikasi yang dapat ditolak.');
+        }
+
+        if ($payment->payment_method !== 'manual') {
+            return back()->with('error', 'Penolakan hanya tersedia untuk pembayaran transfer manual.');
+        }
+
+        $payment->update(['status' => 'rejected']);
+
+        return redirect()
+            ->route('admin.qris-billing.payment.show', $payment)
+            ->with('success', 'Pembayaran berhasil ditolak. Partner dapat mengirim ulang bukti transfer.');
+    }
     public function updateProof(Request $request, QrisBillingPayment $payment)
     {
         $request->validate([
