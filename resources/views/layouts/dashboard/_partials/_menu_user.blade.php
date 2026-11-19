@@ -50,7 +50,7 @@
 	</div>
 
 @php
-    $qrisBillingPaymentMethod = \\App\\Models\\Setting::getValue('qris_billing_payment_method', 'both');
+    $qrisBillingPaymentMethod = \App\Models\Setting::getValue('qris_billing_payment_method', 'both');
 @endphp
 
 @if ($qrisBillingPaymentMethod !== 'virtual_account')
