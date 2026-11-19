@@ -141,6 +141,7 @@ Route::get('export/qris-transactions', [ExportController::class, 'qrisTransactio
         Route::get('qris-billing/report', [AdminQrisBillingController::class, 'report'])->name('qris-billing.report');
         Route::post('qris-billing/payment/{payment}/sync-midtrans-status', [AdminQrisBillingController::class, 'syncMidtransStatus'])->name('qris-billing.payment.sync-midtrans-status');
         Route::get('qris-billing/payment/{payment}', [AdminQrisBillingController::class, 'showPayment'])->name('qris-billing.payment.show');
+        Route::patch('qris-billing/payment/{payment}/reject', [AdminQrisBillingController::class, 'rejectPayment'])->name('qris-billing.payment.reject');
         Route::post('qris-billing/payment/{payment}/proof', [AdminQrisBillingController::class, 'updateProof'])->name('qris-billing.payment.proof.update');
         Route::get('qris-billing/{outlet}', [AdminQrisBillingController::class, 'show'])->name('qris-billing.show');
         Route::patch('qris-billing/{outlet}/mark-paid', [AdminQrisBillingController::class, 'markPaid'])->name('qris-billing.mark-paid');
