@@ -34,6 +34,16 @@
                         <label class="form-label mb-1 fw-bold">Periode</label>
                         <input type="month" name="period" class="form-control form-control-sm" value="{{ $period }}">
                     </div>
+                    <div>
+                        <label class="form-label mb-1 fw-bold">Status</label>
+                        <select name="status" class="form-select form-select-sm">
+                            <option value="">Semua Status</option>
+                            <option value="paid" {{ $status === 'paid' ? 'selected' : '' }}>Aktif / Lunas</option>
+                            <option value="pending" {{ $status === 'pending' ? 'selected' : '' }}>Menunggu Konfirmasi</option>
+                            <option value="failed" {{ $status === 'failed' ? 'selected' : '' }}>Gagal</option>
+                            <option value="rejected" {{ $status === 'rejected' ? 'selected' : '' }}>Ditolak</option>
+                        </select>
+                    </div>
                     <div style="min-width: 220px;">
                         <label class="form-label mb-1 fw-bold">Owner</label>
                         <select name="owner_id" class="form-select form-select-sm">
