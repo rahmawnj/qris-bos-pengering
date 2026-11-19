@@ -96,7 +96,7 @@ class QrisBillingController extends Controller
                     'proof_of_payment' => $proofPath,
                 ]);
             });
-        } catch (\\Throwable $e) {
+        } catch (\Throwable $e) {
             if (Storage::disk('public')->exists($proofPath)) {
                 Storage::disk('public')->delete($proofPath);
             }
@@ -105,7 +105,7 @@ class QrisBillingController extends Controller
                 throw $e;
             }
 
-            \\Illuminate\\Support\\Facades\\Log::error('QRIS billing manual transfer submission failed.', [
+            \Illuminate\Support\Facades\Log::error('QRIS billing manual transfer submission failed.', [
                 'outlet_id' => $outlet->id,
                 'error' => $e->getMessage(),
             ]);
