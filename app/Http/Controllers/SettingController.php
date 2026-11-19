@@ -22,6 +22,7 @@ class SettingController extends Controller
         $qrisBillingPaymentBankName = Setting::getValue('qris_billing_payment_bank_name', 'Bank BCA');
         $qrisBillingPaymentAccountNumber = Setting::getValue('qris_billing_payment_account_number', '8290-xxxx-xxxx');
         $qrisBillingPaymentAccountHolder = Setting::getValue('qris_billing_payment_account_holder', 'Bos Pengering');
+        $qrisBillingPaymentMethod = Setting::getValue('qris_billing_payment_method', 'both');
 
         return view('dashboard.setting', compact(
             'appName',
@@ -34,7 +35,8 @@ class SettingController extends Controller
             'qrisBillingAdvanceDays',
             'qrisBillingPaymentBankName',
             'qrisBillingPaymentAccountNumber',
-            'qrisBillingPaymentAccountHolder'
+            'qrisBillingPaymentAccountHolder',
+            'qrisBillingPaymentMethod'
         ));
     }
 
@@ -50,6 +52,7 @@ class SettingController extends Controller
             'qris_billing_payment_bank_name' => 'required|string|max:100',
             'qris_billing_payment_account_number' => 'required|string|max:100',
             'qris_billing_payment_account_holder' => 'required|string|max:100',
+            'qris_billing_payment_method' => ['required', 'string', Rule::in(['manual', 'virtual_account', 'both'])],
         ]);
 
         $envData = [
@@ -65,6 +68,7 @@ class SettingController extends Controller
         Setting::setValue('qris_billing_payment_bank_name', $request->input('qris_billing_payment_bank_name'));
         Setting::setValue('qris_billing_payment_account_number', $request->input('qris_billing_payment_account_number'));
         Setting::setValue('qris_billing_payment_account_holder', $request->input('qris_billing_payment_account_holder'));
+        Setting::setValue('qris_billing_payment_method', $request->input('qris_billing_payment_method'));
 
         return redirect()->route('admin.setting.form')->with('success', 'Settings updated successfully!');
     }

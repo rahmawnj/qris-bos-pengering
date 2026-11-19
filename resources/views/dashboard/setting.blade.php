@@ -106,17 +106,47 @@
                 <hr class="my-4">
                 <div class="row mb-3"><div class="col-md-7 offset-md-3"><h5 class="mb-0">Rekening Pembayaran</h5></div></div>
 
-                <div class="row mb-3">
-                    <label for="qris_billing_payment_bank_name" class="col-md-3 col-form-label text-md-end">Nama Bank</label>
-                    <div class="col-md-7"><input type="text" class="form-control @error('qris_billing_payment_bank_name') is-invalid @enderror" id="qris_billing_payment_bank_name" name="qris_billing_payment_bank_name" value="{{ old('qris_billing_payment_bank_name', $qrisBillingPaymentBankName) }}" required>@error('qris_billing_payment_bank_name') <div class="invalid-feedback">{{ $message }}</div> @enderror</div>
+                <div class="row mb-4">
+                    <label class="col-md-3 col-form-label text-md-end">Metode Pembayaran</label>
+                    <div class="col-md-7">
+                        <div class="row g-2">
+                            <div class="col-md-4">
+                                <label class="billing-method-choice w-100">
+                                    <input type="radio" name="qris_billing_payment_method" value="manual" {{ old('qris_billing_payment_method', $qrisBillingPaymentMethod) === 'manual' ? 'checked' : '' }}>
+                                    <span><i class="fa fa-receipt fa-lg d-block mb-2"></i><strong>Manual</strong><small>Transfer + bukti</small></span>
+                                </label>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="billing-method-choice w-100">
+                                    <input type="radio" name="qris_billing_payment_method" value="virtual_account" {{ old('qris_billing_payment_method', $qrisBillingPaymentMethod) === 'virtual_account' ? 'checked' : '' }}>
+                                    <span><i class="fa fa-university fa-lg d-block mb-2"></i><strong>Virtual Account</strong><small>Midtrans otomatis</small></span>
+                                </label>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="billing-method-choice w-100">
+                                    <input type="radio" name="qris_billing_payment_method" value="both" {{ old('qris_billing_payment_method', $qrisBillingPaymentMethod) === 'both' ? 'checked' : '' }}>
+                                    <span><i class="fa fa-random fa-lg d-block mb-2"></i><strong>Keduanya</strong><small>Manual + VA</small></span>
+                                </label>
+                            </div>
+                        </div>
+                        @error('qris_billing_payment_method') <div class="text-danger small mt-2">{{ $message }}</div> @enderror
+                        <div class="form-text mt-2">Pilih metode yang ingin ditampilkan pada halaman perpanjangan QRIS outlet.</div>
+                    </div>
                 </div>
-                <div class="row mb-3">
-                    <label for="qris_billing_payment_account_number" class="col-md-3 col-form-label text-md-end">Nomor Rekening</label>
-                    <div class="col-md-7"><input type="text" class="form-control @error('qris_billing_payment_account_number') is-invalid @enderror" id="qris_billing_payment_account_number" name="qris_billing_payment_account_number" value="{{ old('qris_billing_payment_account_number', $qrisBillingPaymentAccountNumber) }}" required>@error('qris_billing_payment_account_number') <div class="invalid-feedback">{{ $message }}</div> @enderror</div>
-                </div>
-                <div class="row mb-3">
-                    <label for="qris_billing_payment_account_holder" class="col-md-3 col-form-label text-md-end">Atas Nama</label>
-                    <div class="col-md-7"><input type="text" class="form-control @error('qris_billing_payment_account_holder') is-invalid @enderror" id="qris_billing_payment_account_holder" name="qris_billing_payment_account_holder" value="{{ old('qris_billing_payment_account_holder', $qrisBillingPaymentAccountHolder) }}" required>@error('qris_billing_payment_account_holder') <div class="invalid-feedback">{{ $message }}</div> @enderror</div>
+
+                <div id="qris_manual_bank_fields">
+                    <div class="row mb-3">
+                        <label for="qris_billing_payment_bank_name" class="col-md-3 col-form-label text-md-end">Nama Bank</label>
+                        <div class="col-md-7"><input type="text" class="form-control @error('qris_billing_payment_bank_name') is-invalid @enderror" id="qris_billing_payment_bank_name" name="qris_billing_payment_bank_name" value="{{ old('qris_billing_payment_bank_name', $qrisBillingPaymentBankName) }}" required>@error('qris_billing_payment_bank_name') <div class="invalid-feedback">{{ $message }}</div> @enderror</div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="qris_billing_payment_account_number" class="col-md-3 col-form-label text-md-end">Nomor Rekening</label>
+                        <div class="col-md-7"><input type="text" class="form-control @error('qris_billing_payment_account_number') is-invalid @enderror" id="qris_billing_payment_account_number" name="qris_billing_payment_account_number" value="{{ old('qris_billing_payment_account_number', $qrisBillingPaymentAccountNumber) }}" required>@error('qris_billing_payment_account_number') <div class="invalid-feedback">{{ $message }}</div> @enderror</div>
+                    </div>
+                    <div class="row mb-3">
+                        <label for="qris_billing_payment_account_holder" class="col-md-3 col-form-label text-md-end">Atas Nama</label>
+                        <div class="col-md-7"><input type="text" class="form-control @error('qris_billing_payment_account_holder') is-invalid @enderror" id="qris_billing_payment_account_holder" name="qris_billing_payment_account_holder" value="{{ old('qris_billing_payment_account_holder', $qrisBillingPaymentAccountHolder) }}" required>@error('qris_billing_payment_account_holder') <div class="invalid-feedback">{{ $message }}</div> @enderror</div>
+                    </div>
                 </div>
 
                 <div class="row mt-4"><div class="col-md-7 offset-md-3"><button type="submit" class="btn btn-primary px-4"><i class="fa fa-save me-1"></i> Simpan Perubahan</button></div></div>
@@ -125,9 +155,31 @@
     </div>
 @endsection
 
+@push('styles')
+<style>
+.billing-method-choice{display:block;cursor:pointer;position:relative;margin:0}
+.billing-method-choice input{position:absolute;opacity:0;pointer-events:none}
+.billing-method-choice span{display:flex;min-height:124px;flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:3px;padding:12px;border:1px solid #d9dee5;border-radius:10px;background:#fff;transition:.18s ease}
+.billing-method-choice span i{color:#64748b}
+.billing-method-choice span small{font-size:12px;color:#6b7280}
+.billing-method-choice input:checked+span{border:2px solid #348fe2;background:rgba(52,143,226,.07);box-shadow:0 0 0 2px rgba(52,143,226,.08)}
+.billing-method-choice input:focus-visible+span{outline:3px solid rgba(52,143,226,.25);outline-offset:2px}
+</style>
+@endpush
+
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+    const paymentMethodInputs = document.querySelectorAll('input[name="qris_billing_payment_method"]');
+    const manualBankFields = document.getElementById('qris_manual_bank_fields');
+    function syncManualBankFields() {
+        const selected = document.querySelector('input[name="qris_billing_payment_method"]:checked')?.value;
+        const showManual = selected === 'manual' || selected === 'both';
+        manualBankFields.style.display = showManual ? '' : 'none';
+    }
+    paymentMethodInputs.forEach((input) => input.addEventListener('change', syncManualBankFields));
+    syncManualBankFields();
+
     const modeSelect = document.getElementById('qris_billing_max_fee_mode');
     const maxFeeRow = document.getElementById('qris_billing_max_fee_row');
     const maxFeeInput = document.getElementById('qris_billing_max_fee');
