@@ -186,17 +186,32 @@
                                 <i class="fa fa-info-circle me-1"></i> Harap pastikan bukti transfer di atas valid dan nominal sudah masuk ke rekening sebelum melakukan konfirmasi.
                             </div>
 
-                            <form action="{{ route('admin.qris-billing.mark-paid', $outlet) }}" method="POST">
-                                @csrf
-                                @method('PATCH')
-                                <input type="hidden" name="billing_period" value="{{ $period }}">
-                                <input type="hidden" name="payment_id" value="{{ $outlet->billing_payment->id }}">
-                                
-                                <button type="submit" class="btn btn-primary btn-lg px-5 w-100" 
-                                    onclick="return confirm('Konfirmasi perpanjangan QRIS ini?');">
-                                    <i class="fa fa-check-circle me-1"></i> ACC Perpanjangan
-                                </button>
-                            </form>
+                            @if ($outlet->billing_payment->status === 'pending')
+                                <div class="d-flex flex-column flex-md-row gap-2">
+                                    <form action="{{ route('admin.qris-billing.mark-paid', $outlet) }}" method="POST" class="flex-fill">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="billing_period" value="{{ $period }}">
+                                        <input type="hidden" name="payment_id" value="{{ $outlet->billing_payment->id }}">
+                                        <button type="submit" class="btn btn-primary btn-lg w-100" onclick="return confirm('Konfirmasi perpanjangan QRIS ini?');">
+                                            <i class="fa fa-check-circle me-1"></i> ACC Perpanjangan
+                                        </button>
+                                    </form>
+                                    @if ($outlet->billing_payment->payment_method === 'manual')
+                                        <form action="{{ route('admin.qris-billing.payment.reject', $outlet->billing_payment) }}" method="POST" class="flex-fill">
+                                            @csrf
+                                            @method('PATCH')
+                                            <button type="submit" class="btn btn-danger btn-lg w-100" onclick="return confirm('Tolak pembayaran ini? Partner dapat mengirim ulang bukti transfer.');">
+                                                <i class="fa fa-times-circle me-1"></i> Tolak Pembayaran
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            @elseif ($outlet->billing_payment->status === 'rejected')
+                                <div class="alert alert-danger text-start mb-0">
+                                    <h5 class="alert-heading"><i class="fa fa-times-circle me-1"></i> Pembayaran Ditolak</h5>
+                                    <p class="mb-0">Partner dapat mengirim ulang bukti transfer melalui halaman perpanjangan QRIS.</p>
+                                </div>
                         @else
                             <div class="alert alert-success">
                                 <h5 class="alert-heading"><i class="fa fa-check-circle me-1"></i> Pembayaran Terkonfirmasi</h5>
