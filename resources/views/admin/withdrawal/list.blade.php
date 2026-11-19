@@ -248,7 +248,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="8" class="text-center text-muted py-4">Tidak ada permintaan penarikan dana yang sedang pending.</td>
+                                <td colspan="9" class="text-center text-muted py-4">Tidak ada permintaan penarikan dana yang sedang pending.</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -257,7 +257,7 @@
                             <th colspan="2" class="text-end">Total yang Ditampilkan:</th>
                             <th>Rp {{ number_format((int) $withdrawals->sum('withdrawal_fee'), 0, ',', '.') }}</th>
                             <th>Rp {{ number_format($totalAmountInTable, 0, ',', '.') }}</th>
-                            <th colspan="4"></th>
+                            <th colspan="3"></th>
                             <th class="text-end">Jumlah Permintaan (Filter):</th>
                             <th>{{ $totalCountInTable }}</th>
                         </tr>
