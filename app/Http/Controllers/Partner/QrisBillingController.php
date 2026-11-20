@@ -46,7 +46,7 @@ class QrisBillingController extends Controller
 
             $result = $response->json() ?? [];
 
-            \\Illuminate\\Support\\Facades\\Log::info('QRIS billing Midtrans VA cancellation response.', [
+            logger()->info('QRIS billing Midtrans VA cancellation response.', [
                 'payment_id' => $payment->id,
                 'order_id' => $payment->gateway_order_id,
                 'http_status' => $response->status(),
