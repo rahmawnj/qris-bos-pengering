@@ -501,9 +501,67 @@
 
 @push('scripts')
 
+    <script src="{{ asset('assets/plugins/moment/min/moment.min.js') }}"></script>
+    <script src="{{ asset('assets/plugins/bootstrap-daterangepicker/daterangepicker.js') }}"></script>
     <script src="{{ asset('assets/plugins/apexcharts/dist/apexcharts.min.js') }}"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function () {
+            // Date range picker: library harus dimuat setelah jQuery dari vendor.min.js.
+            const dateRangeInput = document.getElementById('dashboard-daterange');
+
+            if (dateRangeInput && window.jQuery && window.moment && jQuery.fn.daterangepicker) {
+                const dateFormat = 'YYYY/MM/DD';
+                const currentValue = (dateRangeInput.value || '').trim();
+                const parsedRange = currentValue.split(' - ');
+                let initialStart = moment().startOf('month');
+                let initialEnd = moment().endOf('month');
+
+                if (parsedRange.length === 2) {
+                    const parsedStart = moment(parsedRange[0].trim(), dateFormat, true);
+                    const parsedEnd = moment(parsedRange[1].trim(), dateFormat, true);
+
+                    if (parsedStart.isValid() && parsedEnd.isValid() && !parsedEnd.isBefore(parsedStart, 'day')) {
+                        initialStart = parsedStart;
+                        initialEnd = parsedEnd;
+                    }
+                }
+
+                jQuery(dateRangeInput).daterangepicker({
+                    startDate: initialStart,
+                    endDate: initialEnd,
+                    autoUpdateInput: true,
+                    showDropdowns: true,
+                    alwaysShowCalendars: false,
+                    opens: 'left',
+                    locale: {
+                        format: dateFormat,
+                        separator: ' - ',
+                        applyLabel: 'Terapkan',
+                        cancelLabel: 'Batal',
+                        fromLabel: 'Dari',
+                        toLabel: 'Sampai',
+                        customRangeLabel: 'Pilih Rentang',
+                        weekLabel: 'M',
+                        daysOfWeek: ['Min', 'Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab'],
+                        monthNames: [
+                            'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+                            'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+                        ],
+                        firstDay: 1
+                    }
+                });
+
+                jQuery(dateRangeInput).on('apply.daterangepicker', function (event, picker) {
+                    this.value = picker.startDate.format(dateFormat) + ' - ' + picker.endDate.format(dateFormat);
+                });
+
+                jQuery(dateRangeInput).on('cancel.daterangepicker', function () {
+                    this.value = '';
+                });
+            } else if (dateRangeInput) {
+                console.error('Date Range Picker gagal dimuat. Periksa jQuery, Moment, dan daterangepicker.js.');
+            }
+
             document.querySelectorAll('.qris-billing-alert-dismiss').forEach(function (button) {
                 button.addEventListener('click', function () {
                     button.closest('.qris-billing-alert')?.remove();
