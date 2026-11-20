@@ -49,9 +49,7 @@
 	    </div>
 	</div>
 
-@php
-    $qrisBillingPaymentMethod = \App\Models\Setting::getValue('qris_billing_payment_method', 'both');
-@endphp
+
 
 <div class="menu-item has-sub {{ Request::is('admin/qris-billing*') ? 'active' : '' }}">
     <a href="javascript:;" class="menu-link">
@@ -65,7 +63,6 @@
         <div class="menu-caret"></div>
     </a>
     <div class="menu-submenu">
-        @if ($qrisBillingPaymentMethod !== 'virtual_account')
         <div class="menu-item {{ Request::is('admin/qris-billing') ? 'active' : '' }}">
             <a href="{{ route('admin.qris-billing.index') }}" class="menu-link">
                 <div class="menu-text">
@@ -76,7 +73,6 @@
                 </div>
             </a>
         </div>
-        @endif
         <div class="menu-item {{ Request::is('admin/qris-billing/report') ? 'active' : '' }}">
             <a href="{{ route('admin.qris-billing.report') }}" class="menu-link">
                 <div class="menu-text">Laporan Perpanjangan QRIS</div>
