@@ -128,7 +128,7 @@
 </div>
 
 @if (isset($qrisBillingOutlets) && $qrisBillingOutlets->isNotEmpty())
-    <div class="mb-4">
+    <div class="mt-3 mb-4">
         @foreach ($qrisBillingOutlets as $qrisOutlet)
             @php
                 $qrisActiveUntil = $qrisOutlet->qris_billing_due_date;
