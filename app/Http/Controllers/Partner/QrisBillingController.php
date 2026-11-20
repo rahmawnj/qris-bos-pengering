@@ -38,11 +38,13 @@ class QrisBillingController extends Controller
             return back()->with('error', 'Konfigurasi Midtrans atau nomor pesanan tidak tersedia.');
         }
 
+        $baseUrl = 'https://api.sandbox.midtrans.com/v2/' . rawurlencode($payment->gateway_order_id);
+
         try {
             $response = Http::withBasicAuth($serverKey, '')
                 ->acceptJson()
                 ->timeout(15)
-                ->post('https://api.sandbox.midtrans.com/v2/' . rawurlencode($payment->gateway_order_id) . '/cancel');
+                ->post($baseUrl . '/cancel');
 
             $result = $response->json() ?? [];
 
@@ -53,43 +55,82 @@ class QrisBillingController extends Controller
                 'response' => $result,
             ]);
 
-            if (!$response->successful()) {
-                // Jangan membatalkan status lokal jika gateway belum mengonfirmasi pembatalan.
+            $gatewayStatus = strtolower((string) data_get($result, 'transaction_status', ''));
+            $localFinalStatus = null;
+
+            if ($response->successful() && in_array($gatewayStatus, ['cancel', 'cancelled', 'canceled'], true)) {
+                $localFinalStatus = 'cancelled';
+            } elseif (!$response->successful() && $response->serverError()) {
+                // Fallback resmi Core API: expire transaksi yang masih pending.
+                // Endpoint cancel sedang mengalami gangguan 5xx, jadi coba tutup VA
+                // dengan endpoint expire. Status lokal tetap pending bila gateway gagal.
+                $expireResponse = Http::withBasicAuth($serverKey, '')
+                    ->acceptJson()
+                    ->timeout(15)
+                    ->post($baseUrl . '/expire');
+
+                $expireResult = $expireResponse->json() ?? [];
+                $expireStatus = strtolower((string) data_get($expireResult, 'transaction_status', ''));
+                $expireStatusCode = (string) data_get($expireResult, 'status_code', '');
+
+                logger()->info('QRIS billing Midtrans VA expire fallback response.', [
+                    'payment_id' => $payment->id,
+                    'order_id' => $payment->gateway_order_id,
+                    'http_status' => $expireResponse->status(),
+                    'response' => $expireResult,
+                ]);
+
+                $responseOrderId = (string) data_get($expireResult, 'order_id', $payment->gateway_order_id);
+                $responseAmount = data_get($expireResult, 'gross_amount');
+
+                if ($expireResponse->successful()
+                    && $responseOrderId === (string) $payment->gateway_order_id
+                    && ($responseAmount === null || (int) round((float) $responseAmount) === (int) $payment->amount)
+                    && ($expireStatus === 'expire' || $expireStatusCode === '407')) {
+                    $localFinalStatus = 'expired';
+                    $result = $expireResult;
+                } else {
+                    app(MidtransQrisBillingStatusService::class)->sync($payment);
+                    $expireMessage = (string) data_get($expireResult, 'status_message', 'Tidak ada detail dari Midtrans.');
+                    return back()->with('error', 'Pembatalan dan penutupan VA belum berhasil. Cancel HTTP '
+                        . $response->status() . '; expire HTTP ' . $expireResponse->status()
+                        . ': ' . $expireMessage . '. Status pembayaran tidak diubah.');
+                }
+            } else {
                 app(MidtransQrisBillingStatusService::class)->sync($payment);
-                $gatewayMessage = (string) data_get($result, 'status_message', 'Tidak ada detail dari Midtrans.');
-                return back()->with('error', 'Midtrans menolak pembatalan (HTTP ' . $response->status() . '): ' . $gatewayMessage);
+                $gatewayMessage = (string) data_get($result, 'status_message', 'Status transaksi belum dikonfirmasi.');
+                return back()->with('error', 'Midtrans belum mengonfirmasi pembatalan (HTTP '
+                    . $response->status() . '): ' . $gatewayMessage);
             }
 
-            $gatewayStatus = (string) data_get($result, 'transaction_status', '');
-            if ($gatewayStatus !== '' && !in_array($gatewayStatus, ['cancel', 'cancelled', 'canceled'], true)) {
-                app(MidtransQrisBillingStatusService::class)->sync($payment);
-                return back()->with('error', 'Midtrans mengembalikan status ' . $gatewayStatus . '. Pembayaran tidak ditandai batal.');
-            }
-
-            $finalStatus = DB::transaction(function () use ($payment, $result) {
+            $finalStatus = DB::transaction(function () use ($payment, $result, $localFinalStatus) {
                 $locked = QrisBillingPayment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
                 if ($locked->status !== 'pending') {
                     return $locked->status;
                 }
-                $locked->status = 'cancelled';
+                $locked->status = $localFinalStatus;
                 $locked->gateway_transaction_id = data_get($result, 'transaction_id', $locked->gateway_transaction_id);
                 $locked->save();
-                return 'cancelled';
+                return $localFinalStatus;
             });
 
-            if ($finalStatus !== 'cancelled') {
+            if ($finalStatus !== $localFinalStatus) {
                 return back()->with('error', 'Status pembayaran berubah menjadi ' . $finalStatus . '. Silakan muat ulang halaman.');
             }
 
+            $message = $localFinalStatus === 'expired'
+                ? 'Virtual Account berhasil ditutup oleh Midtrans melalui proses expire. Anda sekarang dapat memilih metode pembayaran lain.'
+                : 'Virtual Account berhasil dibatalkan. Sekarang Anda dapat memilih metode atau payment gateway lain.';
+
             return redirect()->route('partner.qris-billing.show', $payment->outlet_id)
-                ->with('success', 'Virtual Account berhasil dibatalkan. Sekarang Anda dapat memilih metode atau payment gateway lain.');
+                ->with('success', $message);
         } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('QRIS billing VA cancellation failed.', [
                 'payment_id' => $payment->id,
                 'order_id' => $payment->gateway_order_id,
                 'error' => $e->getMessage(),
             ]);
-            return back()->with('error', 'Gagal membatalkan Virtual Account. Status pembayaran tidak diubah.');
+            return back()->with('error', 'Gagal membatalkan atau menutup Virtual Account. Status pembayaran tidak diubah.');
         }
     }
 
