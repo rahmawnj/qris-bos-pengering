@@ -1,10 +1,10 @@
 <?php
 
-namespace App\\Http\\Controllers;
+namespace App\Http\Controllers;
 
-use App\\Constants\\OrderStatus;
-use App\\Models\\Transaction;
-use Carbon\\Carbon;
+use App\Constants\OrderStatus;
+use App\Models\Transaction;
+use Carbon\Carbon;
 
 class LandingController extends Controller
 {
@@ -12,7 +12,7 @@ class LandingController extends Controller
      * Display the transaction progress.
      *
      * @param string $order_id
-     * @return \\Illuminate\\View\\View|\\Illuminate\\Http\\RedirectResponse
+     * @return \Illuminate\View\View|\Illuminate\Http\RedirectResponse
      */
     public function transaction($order_id)
     {
