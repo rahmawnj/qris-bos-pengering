@@ -189,6 +189,7 @@ Route::get('export/qris-transactions', [ExportController::class, 'qrisTransactio
         Route::get('qris-billing/report', [PartnerQrisBillingController::class, 'report'])->name('qris-billing.report');
         Route::get('qris-billing/payment/{payment}', [PartnerQrisBillingController::class, 'showPayment'])->name('qris-billing.payment.show');
         Route::get('qris-billing/payment/{payment}/status', [PartnerQrisBillingController::class, 'paymentStatus'])->name('qris-billing.payment.status');
+        Route::post('qris-billing/payment/{payment}/cancel', [PartnerQrisBillingController::class, 'cancelVirtualAccount'])->name('qris-billing.payment.cancel');
         Route::get('qris-billing/{outlet}/upload', [PartnerQrisBillingController::class, 'upload'])->name('qris-billing.upload');
         Route::post('qris-billing/{outlet}/manual-transfer', [PartnerQrisBillingController::class, 'submitManualTransfer'])->name('qris-billing.manual-transfer');
         Route::post('qris-billing/{outlet}/virtual-account', [PartnerQrisBillingController::class, 'createVirtualAccount'])->name('qris-billing.virtual-account');
