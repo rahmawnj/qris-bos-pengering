@@ -23,6 +23,67 @@ class QrisBillingController extends Controller
     public function showPayment(Request $request,QrisBillingPayment $payment){abort_unless(in_array($payment->outlet_id,$this->accessibleOutletIds()),403,'Akses outlet ditolak.');$payment->loadMissing(['outlet.devices']);$outlet=$this->outletFromBillingPayment($payment);abort_unless($outlet,404,'Data perpanjangan tidak ditemukan.');$paymentInstruction=$this->paymentInstruction();$paymentMethod=Setting::getValue('qris_billing_payment_method','both');return view('partner.qris_billing.show',compact('outlet','paymentInstruction','paymentMethod'));}
     public function upload(Request $request,Outlet $outlet){$this->authorizeOutlet($outlet);if(!$outlet->qris_billing_enabled)return redirect()->route('partner.qris-billing.report')->with('error','Outlet ini tidak memiliki fitur perpanjangan QRIS.');return redirect()->route('partner.qris-billing.show',$outlet);}
 
+    public function cancelVirtualAccount(Request $request, QrisBillingPayment $payment)
+    {
+        abort_unless(in_array($payment->outlet_id, $this->accessibleOutletIds()), 403, 'Akses outlet ditolak.');
+        abort_unless($payment->payment_method === 'virtual_account' && $payment->payment_provider === 'midtrans', 404, 'Pembayaran VA tidak ditemukan.');
+
+        $payment->refresh();
+        if ($payment->status !== 'pending') {
+            return back()->with('error', 'Pembayaran sudah berstatus ' . $payment->status . ' dan tidak dapat dibatalkan.');
+        }
+
+        $serverKey = (string) config('services.midtrans.sandbox_server_key');
+        if ($serverKey === '' || !$payment->gateway_order_id) {
+            return back()->with('error', 'Konfigurasi Midtrans atau nomor pesanan tidak tersedia.');
+        }
+
+        try {
+            $response = Http::withBasicAuth($serverKey, '')
+                ->acceptJson()
+                ->timeout(15)
+                ->post('https://api.sandbox.midtrans.com/v2/' . rawurlencode($payment->gateway_order_id) . '/cancel');
+
+            if (!$response->successful()) {
+                // Jangan membatalkan status lokal jika gateway belum mengonfirmasi pembatalan.
+                app(MidtransQrisBillingStatusService::class)->sync($payment);
+                return back()->with('error', 'Midtrans belum mengonfirmasi pembatalan. Periksa status pembayaran sebelum mencoba lagi.');
+            }
+
+            $result = $response->json();
+            $gatewayStatus = (string) data_get($result, 'transaction_status', '');
+            if ($gatewayStatus !== '' && !in_array($gatewayStatus, ['cancel', 'cancelled', 'canceled'], true)) {
+                app(MidtransQrisBillingStatusService::class)->sync($payment);
+                return back()->with('error', 'Midtrans mengembalikan status ' . $gatewayStatus . '. Pembayaran tidak ditandai batal.');
+            }
+
+            $finalStatus = DB::transaction(function () use ($payment, $result) {
+                $locked = QrisBillingPayment::whereKey($payment->id)->lockForUpdate()->firstOrFail();
+                if ($locked->status !== 'pending') {
+                    return $locked->status;
+                }
+                $locked->status = 'cancelled';
+                $locked->gateway_transaction_id = data_get($result, 'transaction_id', $locked->gateway_transaction_id);
+                $locked->save();
+                return 'cancelled';
+            });
+
+            if ($finalStatus !== 'cancelled') {
+                return back()->with('error', 'Status pembayaran berubah menjadi ' . $finalStatus . '. Silakan muat ulang halaman.');
+            }
+
+            return redirect()->route('partner.qris-billing.show', $payment->outlet_id)
+                ->with('success', 'Virtual Account berhasil dibatalkan. Sekarang Anda dapat memilih metode atau payment gateway lain.');
+        } catch (\\Throwable $e) {
+            \\Illuminate\\Support\\Facades\\Log::error('QRIS billing VA cancellation failed.', [
+                'payment_id' => $payment->id,
+                'order_id' => $payment->gateway_order_id,
+                'error' => $e->getMessage(),
+            ]);
+            return back()->with('error', 'Gagal membatalkan Virtual Account. Status pembayaran tidak diubah.');
+        }
+    }
+
     public function paymentStatus(QrisBillingPayment $payment)
     {
         abort_unless(in_array($payment->outlet_id, $this->accessibleOutletIds()), 403, 'Akses outlet ditolak.');
