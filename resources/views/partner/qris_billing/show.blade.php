@@ -124,11 +124,10 @@
                     })();
                     </script>
                 @endif
-                <form action="{{ route('partner.qris-billing.payment.cancel', $outlet->billing_payment) }}" method="POST" class="mt-4" onsubmit="return confirm('Batalkan Virtual Account ini? Setelah dibatalkan, Anda dapat memilih metode atau gateway pembayaran lain.');">
+                <form action="{{ route('partner.qris-billing.payment.cancel', $outlet->billing_payment) }}" method="POST" class="mt-4 d-flex justify-content-end" onsubmit="return confirm('Batalkan Virtual Account ini? Setelah dibatalkan, Anda dapat memilih metode atau gateway pembayaran lain.');">
                     @csrf
-                    <button type="submit" class="btn btn-outline-danger w-100 rounded-pill"><i class="fa fa-times-circle me-1"></i> Batalkan Pembayaran & Ganti Metode</button>
+                    <button type="submit" class="btn btn-outline-danger btn-sm" style="border-radius:6px;"><i class="fa fa-times-circle me-1"></i> Batalkan Pembayaran</button>
                 </form>
-                <div class="small text-muted mt-3">Status akan diperbarui otomatis setelah gateway mengonfirmasi pembayaran. Jika waktu VA habis, sistem akan memeriksa status ke Midtrans terlebih dahulu. Halaman hanya akan diperbarui setelah status pembayaran terkonfirmasi.</div>
             </div>
         </div>
     @else
