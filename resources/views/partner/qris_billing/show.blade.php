@@ -110,10 +110,12 @@
                                 return;
                             }
 
-                            const minutes = Math.floor(remaining / 60000);
-                            const seconds = Math.floor((remaining % 60000) / 1000);
+                            const totalSeconds = Math.floor(remaining / 1000);
+                            const hours = Math.floor(totalSeconds / 3600);
+                            const minutes = Math.floor((totalSeconds % 3600) / 60);
+                            const seconds = totalSeconds % 60;
                             countdown.textContent = 'Sisa waktu pembayaran: '
-                                + minutes + ':' + String(seconds).padStart(2, '0');
+                                + hours + ' jam ' + minutes + ' menit ' + seconds + ' detik';
                             window.setTimeout(refreshVaExpiry, 1000);
                         }
 
@@ -122,6 +124,10 @@
                     })();
                     </script>
                 @endif
+                <form action="{{ route('partner.qris-billing.payment.cancel', $outlet->billing_payment) }}" method="POST" class="mt-4" onsubmit="return confirm('Batalkan Virtual Account ini? Setelah dibatalkan, Anda dapat memilih metode atau gateway pembayaran lain.');">
+                    @csrf
+                    <button type="submit" class="btn btn-outline-danger w-100 rounded-pill"><i class="fa fa-times-circle me-1"></i> Batalkan Pembayaran & Ganti Metode</button>
+                </form>
                 <div class="small text-muted mt-3">Status akan diperbarui otomatis setelah gateway mengonfirmasi pembayaran. Jika waktu VA habis, sistem akan memeriksa status ke Midtrans terlebih dahulu. Halaman hanya akan diperbarui setelah status pembayaran terkonfirmasi.</div>
             </div>
         </div>
