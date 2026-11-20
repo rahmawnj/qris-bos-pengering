@@ -44,13 +44,22 @@ class QrisBillingController extends Controller
                 ->timeout(15)
                 ->post('https://api.sandbox.midtrans.com/v2/' . rawurlencode($payment->gateway_order_id) . '/cancel');
 
+            $result = $response->json() ?? [];
+
+            \\Illuminate\\Support\\Facades\\Log::info('QRIS billing Midtrans VA cancellation response.', [
+                'payment_id' => $payment->id,
+                'order_id' => $payment->gateway_order_id,
+                'http_status' => $response->status(),
+                'response' => $result,
+            ]);
+
             if (!$response->successful()) {
                 // Jangan membatalkan status lokal jika gateway belum mengonfirmasi pembatalan.
                 app(MidtransQrisBillingStatusService::class)->sync($payment);
-                return back()->with('error', 'Midtrans belum mengonfirmasi pembatalan. Periksa status pembayaran sebelum mencoba lagi.');
+                $gatewayMessage = (string) data_get($result, 'status_message', 'Tidak ada detail dari Midtrans.');
+                return back()->with('error', 'Midtrans menolak pembatalan (HTTP ' . $response->status() . '): ' . $gatewayMessage);
             }
 
-            $result = $response->json();
             $gatewayStatus = (string) data_get($result, 'transaction_status', '');
             if ($gatewayStatus !== '' && !in_array($gatewayStatus, ['cancel', 'cancelled', 'canceled'], true)) {
                 app(MidtransQrisBillingStatusService::class)->sync($payment);
