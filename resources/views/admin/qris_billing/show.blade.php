@@ -187,7 +187,7 @@
                             </div>
 
                             @if ($outlet->billing_payment->status === 'pending')
-                                <div class="d-flex flex-column flex-md-row gap-2">
+                                <div class="d-flex flex-column gap-2">
                                     <form action="{{ route('admin.qris-billing.mark-paid', $outlet) }}" method="POST" class="flex-fill">
                                         @csrf
                                         @method('PATCH')
@@ -201,7 +201,7 @@
                                         <form action="{{ route('admin.qris-billing.payment.reject', $outlet->billing_payment) }}" method="POST" class="flex-fill">
                                             @csrf
                                             @method('PATCH')
-                                            <button type="submit" class="btn btn-danger btn-lg w-100" onclick="return confirm('Tolak pembayaran ini? Partner dapat mengirim ulang bukti transfer.');">
+                                            <button type="submit" class="btn btn-outline-danger btn-lg w-100" onclick="return confirm('Tolak pembayaran ini? Partner dapat mengirim ulang bukti transfer.');">
                                                 <i class="fa fa-times-circle me-1"></i> Tolak Pembayaran
                                             </button>
                                         </form>
