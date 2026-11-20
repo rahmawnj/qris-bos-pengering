@@ -74,8 +74,8 @@ class QrisBillingController extends Controller
 
             return redirect()->route('partner.qris-billing.show', $payment->outlet_id)
                 ->with('success', 'Virtual Account berhasil dibatalkan. Sekarang Anda dapat memilih metode atau payment gateway lain.');
-        } catch (\\Throwable $e) {
-            \\Illuminate\\Support\\Facades\\Log::error('QRIS billing VA cancellation failed.', [
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('QRIS billing VA cancellation failed.', [
                 'payment_id' => $payment->id,
                 'order_id' => $payment->gateway_order_id,
                 'error' => $e->getMessage(),
