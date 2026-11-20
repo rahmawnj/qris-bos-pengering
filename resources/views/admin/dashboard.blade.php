@@ -171,7 +171,7 @@
                 $alertClass = $alertType === 'warning' ? 'alert-warning' : 'alert-danger';
                 $billingUrl = route('partner.qris-billing.show', $billingOutlet->id);
             @endphp
-            <div class="alert {{ $alertClass }} mb-3 qris-billing-alert" role="alert">
+            <div class="alert {{ $alertClass }} my-3 qris-billing-alert" role="alert">
                 <div>
                     <strong>{{ $billingOutlet->outlet_name }} — Masa Aktif QRIS</strong><br>
                     @if ($alertType === 'expired')
