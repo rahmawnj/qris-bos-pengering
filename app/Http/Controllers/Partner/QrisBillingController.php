@@ -192,10 +192,10 @@ class QrisBillingController extends Controller
                 'customer_details' => [
                     'first_name' => mb_substr((string) $outlet->outlet_name, 0, 50),
                 ],
-                // Masa berlaku Virtual Account Sandbox: 3 menit.
+                // Masa berlaku Virtual Account: 24 jam sejak VA dibuat.
                 'custom_expiry' => [
-                    'expiry_duration' => 3,
-                    'unit' => 'minute',
+                    'expiry_duration' => 24,
+                    'unit' => 'hour',
                 ],
             ];
             \Illuminate\Support\Facades\Log::info('QRIS billing Midtrans VA request.', [
@@ -268,7 +268,7 @@ class QrisBillingController extends Controller
                 'gateway_transaction_id' => data_get($result, 'transaction_id'),
                 'expires_at' => data_get($result, 'expiry_time')
                     ? \Carbon\Carbon::parse(data_get($result, 'expiry_time'))
-                    : now()->addMinutes(3),
+                    : now()->addHours(24),
             ]);
         } catch (\Throwable $e) {
             $payment->update(['status' => 'failed']);
