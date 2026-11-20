@@ -649,7 +649,6 @@
                                 series: [
                                     { name: 'Manual', data: (data.seriesData && data.seriesData.manual) || [] },
                                     { name: 'QRIS', data: (data.seriesData && data.seriesData.qris) || [] },
-                                    { name: 'Member', data: (data.seriesData && data.seriesData.member) || [] }
                                 ],
                                 xaxis: { categories: data.categories || [] },
                                 colors: colors,
