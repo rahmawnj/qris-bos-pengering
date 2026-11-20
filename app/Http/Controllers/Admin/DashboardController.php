@@ -159,7 +159,7 @@ class DashboardController extends Controller
             if ($request->boolean('load_charts')) {
                 return response()->json([
                     'categories' => [],
-                    'seriesData' => ['manual' => [], 'qris' => [], 'member' => []],
+                    'seriesData' => ['manual' => [], 'qris' => []],
                     'donutLabels' => [],
                     'donutData' => [],
                     'serviceLabels' => [],
@@ -272,7 +272,7 @@ class DashboardController extends Controller
                     $categories = $dates->map(fn ($date) => Carbon::parse($date)->format('Y-m-d'))->toArray();
                     $seriesData = [];
 
-                    foreach (['manual', 'qris', 'member'] as $type) {
+                    foreach (['manual', 'qris'] as $type) {
                         $seriesData[$type] = $dates->map(function ($date) use ($transactions, $type) {
                             $row = $transactions->first(fn ($item) => $item->date == $date && $item->type_lower == $type);
                             return (int) ($row->total_amount ?? 0);
@@ -413,7 +413,7 @@ class DashboardController extends Controller
     
             $dates = $transactionsForCharts->pluck('date')->unique()->sort()->values();
             $categories = $dates->map(fn($date) => Carbon::parse($date)->format('Y-m-d'))->toArray();
-            $transactionTypes = ['manual', 'qris', 'member']; // Tetap lowercase karena kita menggunakannya untuk membandingkan dengan type_lower
+            $transactionTypes = ['manual', 'qris']; // Member tidak ditampilkan pada grafik transaksi
     
             $seriesData = [];
             foreach ($transactionTypes as $type) {
@@ -596,7 +596,7 @@ class DashboardController extends Controller
         // Chart data sengaja dikosongkan pada request HTML awal.
         // Browser akan memuatnya melalui request async ke route dashboard yang sama.
         $categories = [];
-        $seriesData = ['manual' => [], 'qris' => [], 'member' => []];
+        $seriesData = ['manual' => [], 'qris' => []];
         $donutLabels = [];
         $donutData = [];
         $serviceLabels = [];
