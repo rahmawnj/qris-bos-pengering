@@ -104,6 +104,48 @@
                 </div>
 
                 <hr class="my-4">
+                <div class="row mb-3">
+                    <div class="col-md-7 offset-md-3">
+                        <h5 class="mb-1">Biaya Layanan QRIS per Provider</h5>
+                        <div class="form-text">Masukkan persentase fee. Contoh 0,7 berarti 0,7%. Nilai disimpan ke file .env.</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label for="xendit_qris_fee_rate" class="col-md-3 col-form-label text-md-end">Fee Xendit</label>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <input type="number" min="0" max="100" step="0.001" class="form-control @error('xendit_qris_fee_rate') is-invalid @enderror" id="xendit_qris_fee_rate" name="xendit_qris_fee_rate" value="{{ old('xendit_qris_fee_rate', $xenditQrisFeeRate) }}" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        @error('xendit_qris_fee_rate') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label for="midtrans_qris_fee_rate" class="col-md-3 col-form-label text-md-end">Fee Midtrans</label>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <input type="number" min="0" max="100" step="0.001" class="form-control @error('midtrans_qris_fee_rate') is-invalid @enderror" id="midtrans_qris_fee_rate" name="midtrans_qris_fee_rate" value="{{ old('midtrans_qris_fee_rate', $midtransQrisFeeRate) }}" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        @error('midtrans_qris_fee_rate') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <label for="midtrans_partner_qris_fee_rate" class="col-md-3 col-form-label text-md-end">Fee Midtrans Partner</label>
+                    <div class="col-md-7">
+                        <div class="input-group">
+                            <input type="number" min="0" max="100" step="0.001" class="form-control @error('midtrans_partner_qris_fee_rate') is-invalid @enderror" id="midtrans_partner_qris_fee_rate" name="midtrans_partner_qris_fee_rate" value="{{ old('midtrans_partner_qris_fee_rate', $midtransPartnerQrisFeeRate) }}" required>
+                            <span class="input-group-text">%</span>
+                        </div>
+                        <div class="form-text">Default 0% agar transaksi partner tidak dipotong fee.</div>
+                        @error('midtrans_partner_qris_fee_rate') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
+                    </div>
+                </div>
+
+                <hr class="my-4">
                 <div class="row mb-3"><div class="col-md-7 offset-md-3"><h5 class="mb-0">Rekening Pembayaran</h5></div></div>
 
                 <div class="row mb-4">
