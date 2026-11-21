@@ -649,43 +649,44 @@ class TransactionController extends Controller
         }
     }
 
-    public function verify_status(Request $request, Transaction $transaction)
+    public function verify_status(Request $request, Transaction $transaction, QrisTransactionFinalizer $transactionFinalizer)
     {
-        if (!$this->isAdminContext()) {
+        if (! $this->isAdminContext()) {
             abort(403);
         }
 
         $request->validate([
-            'verification_status' => 'required|in:success,failed'
+            'verification_status' => 'required|in:success,failed',
         ]);
 
         if ($transaction->status !== 'pending') {
             return back()->with('error', 'Transaksi sudah diproses sebelumnya.');
         }
 
-        \Illuminate\Support\Facades\DB::beginTransaction();
         try {
-            $transaction->status = $request->verification_status;
-
             if ($request->verification_status === 'success') {
-                $feeAmount = round($transaction->amount * 0.007);
-                $netAmount = $transaction->amount - $feeAmount;
-
-                $transaction->fee_amount = $feeAmount;
-                $transaction->total_amount = $transaction->amount;
-
-                \Illuminate\Support\Facades\DB::table('owners')
-                    ->where('id', $transaction->owner_id)
-                    ->increment('balance', $netAmount);
+                $transactionFinalizer->finalizeByOrderId(
+                    orderId: $transaction->order_id,
+                    status: 'success',
+                    grossAmount: (int) ($transaction->total_amount ?? $transaction->amount),
+                    gatewayReference: $transaction->qrisTransaction?->gateway_reference,
+                    metadata: [
+                        'device_code' => (string) ($transaction->qrisTransaction?->device_code ?? ''),
+                        'service_type' => (string) ($transaction->qrisTransaction?->service_type ?? ''),
+                    ],
+                );
+            } else {
+                $transaction->update(['status' => 'failed']);
             }
 
-            $transaction->save();
-            \Illuminate\Support\Facades\DB::commit();
-
             return back()->with('success', 'Status transaksi berhasil diperbarui.');
-        } catch (\Exception $e) {
-            \Illuminate\Support\Facades\DB::rollBack();
+        } catch (\\Throwable $e) {
+            \\Illuminate\\Support\\Facades\\Log::error('Manual QRIS verification failed.', [
+                'transaction_id' => $transaction->id,
+                'order_id' => $transaction->order_id,
+                'error' => $e->getMessage(),
+            ]);
+
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-    }
-}
+    }}
