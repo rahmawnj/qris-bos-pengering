@@ -196,6 +196,8 @@ class QrisController extends Controller
                 'transaction_id' => $charge['gateway_reference'],
                 'payment_status' => 'pending',
                 'provider' => $charge['provider'],
+                'amount' => (int) $charge['amount'],
+                'amount_formatted' => $amountFormatted,
                 'admin_fee_percentage' => round($adminFeeRate * 100, 4),
                 'api_url' => $charge['api_url'] ?? null,
                 'qr_image' => url('/storage/qrcodes/' . $qrImageUrl, [], false),
