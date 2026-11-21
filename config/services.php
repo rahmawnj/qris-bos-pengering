@@ -51,6 +51,7 @@ return [
         'server_key' => env('MIDTRANS_PARTNER_SERVER_KEY'),
         'partner_id' => env('MIDTRANS_PARTNER_ID'),
         'merchant_id' => env('MIDTRANS_PARTNER_MERCHANT_ID'),
+        'fee_rate' => (float) env('MIDTRANS_PARTNER_QRIS_FEE_RATE', 0),
     ],
 
 
