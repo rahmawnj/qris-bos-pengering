@@ -1,13 +1,13 @@
 <?php
 
-namespace App\\Http\\Controllers\\Auth;
+namespace App\Http\Controllers\Auth;
 
-use App\\Http\\Controllers\\Controller;
-use Illuminate\\Http\\Request;
-use Illuminate\\Support\\Facades\\Auth;
-use Illuminate\\Support\\Facades\\Hash;
-use Illuminate\\Support\\Facades\\Storage;
-use Illuminate\\Validation\\Rule;
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -24,7 +24,6 @@ class ProfileController extends Controller
     public function submit(Request $request)
     {
         // Akun super admin berasal dari konfigurasi, bukan tabel users.
-        // Karena itu profilnya tidak dapat diperbarui melalui model User.
         if (Auth::guard('admin_config')->check()) {
             return redirect()->route('profile.form')
                 ->with('error', 'Profil Super Admin dikelola melalui konfigurasi aplikasi.');
