@@ -680,8 +680,8 @@ class TransactionController extends Controller
             }
 
             return back()->with('success', 'Status transaksi berhasil diperbarui.');
-        } catch (\\Throwable $e) {
-            \\Illuminate\\Support\\Facades\\Log::error('Manual QRIS verification failed.', [
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::error('Manual QRIS verification failed.', [
                 'transaction_id' => $transaction->id,
                 'order_id' => $transaction->order_id,
                 'error' => $e->getMessage(),
@@ -689,4 +689,5 @@ class TransactionController extends Controller
 
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
-    }}
+    }
+}
