@@ -183,6 +183,12 @@ class QrisController extends Controller
             ], 500);
         }
 
+        $adminFeeRate = match ($activeProvider) {
+            'midtrans' => (float) config('services.midtrans.fee_rate', 0.007),
+            'midtrans_partner' => (float) config('services.midtrans_partner.fee_rate', 0),
+            default => (float) config('services.xendit.fee_rate', 0.007),
+        };
+
         return response()->json([
             'status' => 'success',
             'message' => [
@@ -190,6 +196,7 @@ class QrisController extends Controller
                 'transaction_id' => $charge['gateway_reference'],
                 'payment_status' => 'pending',
                 'provider' => $charge['provider'],
+                'admin_fee_percentage' => round($adminFeeRate * 100, 4),
                 'api_url' => $charge['api_url'] ?? null,
                 'qr_image' => url('/storage/qrcodes/' . $qrImageUrl, [], false),
                 'expiresAt' => $charge['expires_at']
