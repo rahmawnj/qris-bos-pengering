@@ -14,6 +14,9 @@ class SettingController extends Controller
         $appName = env('APP_NAME');
         $appIcon = env('APP_ICON');
         $qrisDefaultProvider = config('payments.qris.default_provider', 'xendit');
+        $xenditQrisFeeRate = (float) config('services.xendit.fee_rate', 0.007) * 100;
+        $midtransQrisFeeRate = (float) config('services.midtrans.fee_rate', 0.007) * 100;
+        $midtransPartnerQrisFeeRate = (float) config('services.midtrans_partner.fee_rate', 0) * 100;
         $supportedProviders = config('payments.qris.supported_providers', ['xendit', 'midtrans']);
         $qrisBillingPricePerDevice = Setting::getInt('qris_billing_price_per_device', 100000);
         $qrisBillingMaxFeeMode = Setting::getValue('qris_billing_max_fee_mode', 'capped');
@@ -28,6 +31,9 @@ class SettingController extends Controller
             'appName',
             'appIcon',
             'qrisDefaultProvider',
+            'xenditQrisFeeRate',
+            'midtransQrisFeeRate',
+            'midtransPartnerQrisFeeRate',
             'supportedProviders',
             'qrisBillingPricePerDevice',
             'qrisBillingMaxFeeMode',
@@ -45,6 +51,9 @@ class SettingController extends Controller
         $request->validate([
             'app_name' => 'required|string',
             'qris_default_provider' => ['required', 'string', Rule::in(config('payments.qris.supported_providers', ['xendit', 'midtrans']))],
+            'xendit_qris_fee_rate' => 'required|numeric|min:0|max:100',
+            'midtrans_qris_fee_rate' => 'required|numeric|min:0|max:100',
+            'midtrans_partner_qris_fee_rate' => 'required|numeric|min:0|max:100',
             'qris_billing_price_per_device' => 'required|integer|min:0',
             'qris_billing_max_fee_mode' => ['required', 'string', Rule::in(['capped', 'unlimited'])],
             'qris_billing_max_fee' => 'required_if:qris_billing_max_fee_mode,capped|nullable|integer|min:0',
@@ -58,6 +67,9 @@ class SettingController extends Controller
         $envData = [
             'APP_NAME' => $request->input('app_name'),
             'QRIS_DEFAULT_PROVIDER' => strtolower($request->input('qris_default_provider')),
+            'XENDIT_QRIS_FEE_RATE' => (string) ((float) $request->input('xendit_qris_fee_rate') / 100),
+            'MIDTRANS_QRIS_FEE_RATE' => (string) ((float) $request->input('midtrans_qris_fee_rate') / 100),
+            'MIDTRANS_PARTNER_QRIS_FEE_RATE' => (string) ((float) $request->input('midtrans_partner_qris_fee_rate') / 100),
         ];
 
         $this->setEnvironmentValue($envData);
@@ -76,25 +88,24 @@ class SettingController extends Controller
     private function setEnvironmentValue($data = array())
     {
         $envFile = app()->environmentFilePath();
-        $str = file_get_contents($envFile);
+        $str = file_exists($envFile) ? file_get_contents($envFile) : '';
 
         if (count($data) > 0) {
             foreach ($data as $key => $value) {
-                $str .= "\n";
-                $key = strtoupper($key);
-                $value = $this->envValue($value);
-                $key = $this->envKey($key);
-                $key .= "=";
+                $key = $this->envKey(strtoupper($key));
+                $line = $key . '=' . $this->envValue($value);
+                $pattern = '/^' . preg_quote($key, '/') . '=.*$/m';
 
-                if (strpos($str, $key) !== false) {
-                    $str = preg_replace("/^$key.*$/m", "$key$value", $str);
+                if (preg_match($pattern, $str)) {
+                    $str = preg_replace($pattern, $line, $str);
                 } else {
-                    $str .= "\n$key$value";
+                    $str = rtrim($str) . "\n" . $line . "\n";
                 }
             }
         }
 
         file_put_contents($envFile, $str);
+        Artisan::call('config:clear');
         Artisan::call('cache:clear');
     }
 
