@@ -63,7 +63,7 @@ class QrisTransactionFinalizer
         $isPartner = $provider === 'midtrans_partner';
 
         $grossAmount ??= (int) ($transaction->total_amount ?? $transaction->amount);
-        $feeRate = $isPartner ? 0.0 : $this->resolveFeeRate($provider);
+        $feeRate = $this->resolveFeeRate($provider);
         $feeAmount = (int) round($grossAmount * $feeRate);
         $netAmount = max($grossAmount - $feeAmount, 0);
 
@@ -152,6 +152,7 @@ class QrisTransactionFinalizer
     {
         return match ($provider) {
             'midtrans' => (float) config('services.midtrans.fee_rate', 0.007),
+            'midtrans_partner' => (float) config('services.midtrans_partner.fee_rate', 0),
             default => (float) config('services.xendit.fee_rate', 0.007),
         };
     }
